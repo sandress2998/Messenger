@@ -1,0 +1,56 @@
+services:
+  discovery-service:
+    image: discovery-service:latest  # Укажите свой образ для config-service
+    container_name: discovery-service
+    # Путь к директории с Dockerfile для config-service
+    ports:
+      - "8761:8761"  # Порт, на котором будет работать config-service
+    networks:
+      - messenger-network
+
+  gateway:
+    image: gateway:latest  # Укажите свой образ для config-client-1
+    container_name: gateway
+
+    ports:
+      - "8080:8080"  # Порт, на котором будет работать config-client-1
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"  # Задержка перед запуском клиента
+
+
+  authentication-service:
+    image: authentication-service:latest  # Укажите свой образ для config-client-1
+    container_name: authentication-service
+
+    ports:
+      - "8090:8090"  # Порт, на котором будет работать config-client-1
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+  config-service:
+    image: config-service:latest  # Укажите свой образ для config-client-1
+    container_name: config-service
+
+    ports:
+      - "8000:8000"  # Порт, на котором будет работать config-client-1
+    depends_on:
+      - discovery-service
+    networks:
+      - messenger-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://config-service:8000/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  messenger-network:
+    driver: bridge

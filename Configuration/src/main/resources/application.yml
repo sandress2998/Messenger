@@ -1,0 +1,28 @@
+spring:
+  profiles:
+    active: native
+  application:
+    name: config-service
+  cloud:
+    config:
+      server:
+        native:
+          searchLocations: classpath:/,classpath:/config,classpath:/config/{application}
+
+
+server:
+  port:
+    8000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.cloud: DEBUG
