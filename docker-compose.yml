@@ -8,6 +8,47 @@ services:
     networks:
       - messenger-network
 
+  config-service:
+    image: config-service:latest  # Укажите свой образ для config-client-1
+    container_name: config-service
+
+    ports:
+      - "8000:8000"  # Порт, на котором будет работать config-client-1
+    depends_on:
+      - discovery-service
+    networks:
+      - messenger-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://config-service:8000/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - 29092:29092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
   gateway:
     image: gateway:latest  # Укажите свой образ для config-client-1
     container_name: gateway
@@ -34,22 +75,6 @@ services:
     networks:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
-
-  config-service:
-    image: config-service:latest  # Укажите свой образ для config-client-1
-    container_name: config-service
-
-    ports:
-      - "8000:8000"  # Порт, на котором будет работать config-client-1
-    depends_on:
-      - discovery-service
-    networks:
-      - messenger-network
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://config-service:8000/actuator/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
 networks:
   messenger-network:
