@@ -1,0 +1,20 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: websocket-service
+  cloud:
+    config:
+      uri: http://config-service:8000
+      fail-fast: true
+      allow-override: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh
+
+logging:
+  level:
+    org.springframework.cloud: DEBUG
