@@ -22,17 +22,24 @@ extra["springCloudVersion"] = "2024.0.0"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
+
+
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+
     implementation("org.springframework.cloud:spring-cloud-starter-gateway")
+
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
-    implementation("org.springframework.kafka:spring-kafka")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.cloud:spring-cloud-starter-bootstrap")
 
+    implementation("org.springframework.kafka:spring-kafka")
 
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")

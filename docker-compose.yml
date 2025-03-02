@@ -8,6 +8,8 @@ services:
     networks:
       - messenger-network
 
+
+
   config-service:
     image: config-service:latest  # Укажите свой образ для config-client-1
     container_name: config-service
@@ -24,6 +26,8 @@ services:
       timeout: 5s
       retries: 10
 
+
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -32,6 +36,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+
 
 
   kafka:
@@ -49,6 +54,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
+
+
   gateway:
     image: gateway:latest  # Укажите свой образ для config-client-1
     container_name: gateway
@@ -63,6 +70,7 @@ services:
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"  # Задержка перед запуском клиента
 
 
+
   authentication-service:
     image: authentication-service:latest  # Укажите свой образ для config-client-1
     container_name: authentication-service
@@ -75,6 +83,37 @@ services:
     networks:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+
+
+  message-handler-service:
+    image: message-handler-service:latest
+    container_name: message-handler-service
+
+    ports:
+      - "8091:8091"
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+
+
+  websocket-service:
+    image: websocket-service:latest
+    container_name: websocket-handler-service
+
+    ports:
+      - "8092:8092"
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
 
 networks:
   messenger-network:
