@@ -8,8 +8,6 @@ services:
     networks:
       - messenger-network
 
-
-
   config-service:
     image: config-service:latest  # Укажите свой образ для config-client-1
     container_name: config-service
@@ -26,8 +24,6 @@ services:
       timeout: 5s
       retries: 10
 
-
-
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
@@ -36,7 +32,6 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
-
 
 
   kafka:
@@ -70,22 +65,6 @@ services:
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"  # Задержка перед запуском клиента
 
 
-
-  authentication-service:
-    image: authentication-service:latest  # Укажите свой образ для config-client-1
-    container_name: authentication-service
-
-    ports:
-      - "8090:8090"  # Порт, на котором будет работать config-client-1
-    depends_on:
-      config-service:
-        condition: service_healthy
-    networks:
-      - messenger-network
-    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
-
-
-
   message-handler-service:
     image: message-handler-service:latest
     container_name: message-handler-service
@@ -98,7 +77,6 @@ services:
     networks:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
-
 
 
   websocket-service:
@@ -114,6 +92,53 @@ services:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
 
+
+  authentication-service:
+    image: authentication-service:latest  # Укажите свой образ для config-client-1
+    container_name: authentication-service
+
+    ports:
+      - "8090:8090"  # Порт, на котором будет работать config-client-1
+    depends_on:
+      config-service:
+        condition: service_healthy
+      authentication-postgres:
+        condition: service_started
+      authentication-redis:
+        condition: service_started
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+
+  authentication-postgres:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: password_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - authentication_postgres_data:/var/lib/postgresql/data
+    networks:
+      - messenger-network
+
+
+  authentication-redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - authentication_redis_data:/data
+    networks:
+      - messenger-network
+
+volumes:
+  authentication_postgres_data:
+  authentication_redis_data:
 
 networks:
   messenger-network:

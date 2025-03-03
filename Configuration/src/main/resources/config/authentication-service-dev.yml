@@ -1,3 +1,7 @@
+server:
+  port:
+    8090
+
 eureka:
   client:
     service-url:
@@ -7,6 +11,24 @@ spring:
   application:
     name: authentication-service
 
-server:
-  port:
-    8090
+  r2dbc:
+    url: r2dbc:postgresql://authentication-postgres:5432/password_database
+    username: user
+    password: password
+
+  data:
+    redis:
+      host: authentication-redis
+      port: 6379
+
+logging:
+  level:
+    org:
+      springframework:
+        web=DEBUG:
+        validation=DEBUG:
+my:
+  security:
+    jwt-timeout-in-minutes: 3600
+    refresh-timeout-in-days: 7
+    secret-string: "mySecretStringForKeymySecretStringForKeymySecretStringForKey"
