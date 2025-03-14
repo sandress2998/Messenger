@@ -29,6 +29,6 @@ logging:
         validation=DEBUG:
 my:
   security:
-    jwt-timeout-in-minutes: 3600
+    jwt-timeout-in-minutes: 60
     refresh-timeout-in-days: 7
     secret-string: "mySecretStringForKeymySecretStringForKeymySecretStringForKey"

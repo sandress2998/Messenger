@@ -8,6 +8,7 @@ services:
     networks:
       - messenger-network
 
+
   config-service:
     image: config-service:latest  # Укажите свой образ для config-client-1
     container_name: config-service
@@ -24,14 +25,18 @@ services:
       timeout: 5s
       retries: 10
 
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
+
+    ports:
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    ports:
-      - "2181:2181"
+    networks:
+      - messenger-network
 
 
   kafka:
@@ -39,8 +44,9 @@ services:
     container_name: kafka
     depends_on:
       - zookeeper
+
     ports:
-      - 29092:29092
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -48,7 +54,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
+    networks:
+      - messenger-network
 
 
   gateway:
@@ -81,16 +88,34 @@ services:
 
   websocket-service:
     image: websocket-service:latest
-    container_name: websocket-handler-service
+    container_name: websocket-service
 
     ports:
       - "8092:8092"
     depends_on:
       config-service:
         condition: service_healthy
+      websocket-redis:
+        condition: service_started
+      kafka:
+        condition: service_started
     networks:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+
+  websocket-redis:
+    image: redis:latest
+    container_name: websocket-redis
+
+    ports:
+      - "6380:6380"  # Хост:контейнер
+    volumes:
+      - ./WebSocket/redis_config/redis.conf:/usr/local/etc/redis/redis.conf  # Монтируем конфигурационный файл
+      - websocket_redis_data:/data
+    networks:
+      - messenger-network
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]  # Указываем конфигурационный файл
 
 
   authentication-service:
@@ -113,11 +138,12 @@ services:
 
   authentication-postgres:
     image: postgres:latest
-    container_name: authentication_postgres_db
+    container_name: authentication-postgres-db
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: password_database
+
     ports:
       - "5432:5432"
     volumes:
@@ -128,7 +154,8 @@ services:
 
   authentication-redis:
     image: redis:latest
-    container_name: authentication_redis
+    container_name: authentication-redis
+
     ports:
       - "6379:6379"
     volumes:
@@ -136,9 +163,43 @@ services:
     networks:
       - messenger-network
 
+
+  presence-service:
+    image: presence-service:latest  # Укажите свой образ для config-client-1
+    container_name: presence-service
+
+    ports:
+      - "8093:8093"  # Порт, на котором будет работать config-client-1
+    depends_on:
+      config-service:
+        condition: service_healthy
+      presence-redis:
+        condition: service_started
+      kafka:
+        condition: service_started
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+
+  presence-redis:
+    image: redis:latest
+    container_name: presence-redis
+
+    ports:
+      - "6381:6381"
+    volumes:
+      - ./Presence/redis_config/redis.conf:/usr/local/etc/redis/redis.conf  # Монтируем конфигурационный файл
+      - presence_redis_data:/data
+    networks:
+      - messenger-network
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]  # Указываем конфигурационн
+
 volumes:
   authentication_postgres_data:
   authentication_redis_data:
+  websocket_redis_data:
+  presence_redis_data:
 
 networks:
   messenger-network:
