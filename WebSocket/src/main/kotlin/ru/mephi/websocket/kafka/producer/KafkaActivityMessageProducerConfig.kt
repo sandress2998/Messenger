@@ -9,7 +9,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
 import org.springframework.kafka.support.serializer.JsonSerializer
-import ru.mephi.websocket.model.dto.kafka.send.UserStatusChangeEvent
+import ru.mephi.websocket.model.dto.kafka.send.ChatActivityChangeOutgoingMessage
 
 @Configuration
 class KafkaActivityMessageProducerConfig {
@@ -23,7 +23,7 @@ class KafkaActivityMessageProducerConfig {
     }
 
     @Bean
-    fun activityMessageProducerFactory(): ProducerFactory<String, UserStatusChangeEvent> {
+    fun activityMessageProducerFactory(): ProducerFactory<String, ChatActivityChangeOutgoingMessage> {
         return DefaultKafkaProducerFactory(
             producerConfig(),
             StringSerializer(),
@@ -33,8 +33,8 @@ class KafkaActivityMessageProducerConfig {
 
     @Bean
     fun activityMessageKafkaTemplate(
-        producerFactory: ProducerFactory<String, UserStatusChangeEvent>
-    ): KafkaTemplate<String, UserStatusChangeEvent> {
+        producerFactory: ProducerFactory<String, ChatActivityChangeOutgoingMessage>
+    ): KafkaTemplate<String, ChatActivityChangeOutgoingMessage> {
         return KafkaTemplate(activityMessageProducerFactory())
     }
 }

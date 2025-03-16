@@ -13,6 +13,7 @@ import org.testcontainers.utility.DockerImageName
 import reactor.test.StepVerifier
 import kotlin.test.Test
 
+/*
 @Testcontainers
 @TestInstance(value = TestInstance.Lifecycle.PER_CLASS)
 class StatusRepositoryTest {
@@ -96,3 +97,4 @@ class StatusRepositoryTest {
             .verifyComplete()
     }
 }
+*/

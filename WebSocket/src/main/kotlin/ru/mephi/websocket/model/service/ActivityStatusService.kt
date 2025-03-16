@@ -1,13 +1,13 @@
 package ru.mephi.websocket.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.model.dto.kafka.receive.UserStatusChangeBroadcast
-import ru.mephi.websocket.model.dto.kafka.send.UserStatusChangeEvent
+import ru.mephi.websocket.model.dto.kafka.receive.ChatActivityChangeIngoingMessage
+import ru.mephi.websocket.model.dto.kafka.send.ChatActivityChangeOutgoingMessage
 
 interface ActivityStatusService {
     // notification to ws-client
-    fun sendStatusUpdateNotification(message: UserStatusChangeBroadcast): Mono<Void>
+    fun sendStatusUpdateNotification(message: ChatActivityChangeIngoingMessage): Mono<Void>
 
     // message to kafka-topic
-    fun sendStatusUpdateMessage(message: UserStatusChangeEvent): Mono<Void>
+    fun sendStatusUpdateMessage(message: ChatActivityChangeOutgoingMessage): Mono<Void>
 }

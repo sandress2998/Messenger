@@ -1,14 +1,35 @@
 package ru.mephi.presence.model.service.impl
 
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
-import ru.mephi.presence.model.dto.UserStatusChangeEvent
-import ru.mephi.presence.model.dto.UserStatusChangeBroadcast
+import ru.mephi.presence.model.dto.ChatActivityChangeEvent
 import ru.mephi.presence.model.service.StatusMessaging
 import ru.mephi.presence.model.service.StatusService
 
 
+@Service
+class StatusMessagingImpl(
+    private val statusService: StatusService,
+): StatusMessaging {
+    override fun handleChatActivityMessage(message: ChatActivityChangeEvent): Mono<Void> {
+        val chatID = message.chatID
+        val email = message.email
+        val status = message.status
+
+        return when (status) {
+            "active" -> {
+                statusService.connectToChat(email, chatID)
+            }
+            "inactive" -> {
+                statusService.disconnectFromChat(email, chatID)
+            }
+            else -> {
+                Mono.error(IllegalStateException("Invalid status message ${message.status}"))
+            }
+        }
+    }
+}
+/*
 // TODO("Not yet implemented")
 @Service
 class StatusMessagingImpl(
@@ -41,3 +62,4 @@ class StatusMessagingImpl(
             .then()
     }
 }
+ */

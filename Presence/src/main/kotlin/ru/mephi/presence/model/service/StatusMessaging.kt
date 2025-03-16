@@ -1,8 +1,8 @@
 package ru.mephi.presence.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.presence.model.dto.UserStatusChangeEvent
+import ru.mephi.presence.model.dto.ChatActivityChangeEvent
 
 interface StatusMessaging {
-    fun handleActivityMessage(message: UserStatusChangeEvent): Mono<Void>
+    fun handleChatActivityMessage(message: ChatActivityChangeEvent): Mono<Void>
 }

@@ -1,6 +1,5 @@
 package ru.mephi.presence.kafka.consumer
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import com.fasterxml.jackson.module.kotlin.kotlinModule
@@ -8,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import ru.mephi.presence.model.dto.UserStatusChangeEvent
+import ru.mephi.presence.model.dto.ChatActivityChangeEvent
 import ru.mephi.presence.model.service.StatusMessaging
 
 @Component
@@ -19,20 +18,14 @@ class KafkaListeners(
         .addModule(kotlinModule())
         .build()
 
-    @KafkaListener(topics = ["activity-from-ws-to-presence"], groupId = "presence-service", containerFactory = "messageKafkaListenerContainerFactory")
-    fun listener(message: String): Mono<Void> {
-        // Десериализуем JSON
-        val userStatusChangeEvent = objectMapper.readValue<UserStatusChangeEvent>(message)
-        /*
-        val data = objectMapper.readValue(message, Map::class.java)
-        val email = data["email"] as String
-        val status = data["status"] as String
 
-        // Преобразуем в нужный класс
-        val userStatusChangeEvent = UserStatusChangeEvent(email, status)
-         */
-        println("Received message: $userStatusChangeEvent")
-        return statusMessaging.handleActivityMessage(userStatusChangeEvent)
+    @KafkaListener(topics = ["activity-from-ws-to-presence"], groupId = "presence-service", containerFactory = "messageKafkaListenerContainerFactory")
+    fun chatActivityListener(message: String): Mono<Void> {
+        // Десериализуем JSON
+        val chatActivityChangeEvent = objectMapper.readValue<ChatActivityChangeEvent>(message)
+
+        println("Received message: $chatActivityChangeEvent")
+        return statusMessaging.handleChatActivityMessage(chatActivityChangeEvent)
     }
 }
 

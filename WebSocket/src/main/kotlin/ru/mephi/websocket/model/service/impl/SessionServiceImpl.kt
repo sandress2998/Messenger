@@ -13,12 +13,12 @@ class SessionServiceImpl(
     private val sessionRepository: SessionRepository,
     private val sessionMap: SessionMap
 ): SessionService {
-    override fun addSession(email: String, session: WebSocketSession): Mono<Long> {
+    override fun addSession(email: String, session: WebSocketSession): Mono<Void> {
         sessionMap.addSession(session)
         return sessionRepository.addSession(email, session.id)
     }
 
-    override fun removeSession(email: String, sessionId: String): Mono<Long> {
+    override fun removeSession(email: String, sessionId: String): Mono<Void> {
         sessionMap.removeSession(sessionId)
         return sessionRepository.removeSession(email, sessionId)
     }
@@ -27,7 +27,7 @@ class SessionServiceImpl(
         return sessionRepository.getAllSessions(email)
     }
 
-    override fun removeAllSessions(email: String): Mono<Boolean> {
+    override fun removeAllSessions(email: String): Mono<Void> {
         return sessionRepository.getAllSessions(email)
             .map { sessionId: String ->
                 sessionMap.removeSession(sessionId)
