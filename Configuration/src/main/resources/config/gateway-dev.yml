@@ -6,7 +6,16 @@ eureka:
 spring:
   application:
     name: gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
 
 server:
   port:
     8080
+
+my:
+  security:
+    secret-string: "mySecretStringForKeymySecretStringForKeymySecretStringForKey"

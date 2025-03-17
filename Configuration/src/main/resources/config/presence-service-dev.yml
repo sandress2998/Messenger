@@ -5,17 +5,17 @@ eureka:
 
 spring:
   application:
-    name: websocket-service
+    name: presence-service
   data:
     redis:
-      host: websocket-redis
-      port: 6380
+      host: presence-redis
+      port: 6381
   kafka:
     bootstrap-servers: kafka:9092
 
 server:
   port:
-    8092
+    8093
 
 my:
   security:
