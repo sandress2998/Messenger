@@ -4,7 +4,7 @@ plugins {
     id("org.springframework.boot") version "3.4.3"
     id("io.spring.dependency-management") version "1.1.7"
 }
-
+val springCloudVersion by extra("2024.0.0")
 group = "ru.mephi"
 version = "0.0.1-SNAPSHOT"
 
@@ -18,7 +18,6 @@ repositories {
     mavenCentral()
 }
 
-extra["springCloudVersion"] = "2024.0.0"
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")

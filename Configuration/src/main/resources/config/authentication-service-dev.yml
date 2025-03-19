@@ -12,13 +12,13 @@ spring:
     name: authentication-service
 
   r2dbc:
-    url: r2dbc:postgresql://authentication-postgres:5432/password_database
-    username: user
+    url: r2dbc:postgresql://postgres:5432/postgres_database
+    username: username
     password: password
 
   data:
     redis:
-      host: authentication-redis
+      host: redis
       port: 6379
 
 logging:

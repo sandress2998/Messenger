@@ -1,30 +1,20 @@
 spring:
-  data:
-    mongodb:
-      uri: mongodb://localhost:27017/messages
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-    consumer:
-      group-id: message-handlers
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring:
-          json:
-            value:
-              default: java.lang.String
-            trusted:
-              packages: '*' # Разрешить десериализацию всех пакетов
-  jackson:
-    date-format: "yyyy-MM-dd'T'HH:mm:ss'Z'"
-    time-zone: UTC
-server:
-  port: 8080
+  profiles:
+    active: dev
+  application:
+    name: message-handler-service
+  cloud:
+    config:
+      uri: http://config-service:8000
+      fail-fast: true
+      allow-override: true
+  config:
+    import: configserver:http://config-service:8000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh
 logging:
   level:
-    web: debug
-    kafka: debug
+    org.springframework.cloud: DEBUG

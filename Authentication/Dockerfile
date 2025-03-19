@@ -1,6 +1,6 @@
 # Используем официальный образ Gradle для сборки
 FROM gradle:7.6.1-jdk17 AS build
-
+RUN apt-get install -y curl
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
@@ -26,7 +26,7 @@ COPY src src
 RUN ./gradlew build --no-daemon -x test
 
 # Используем легкий образ для запуска приложения
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jdk-alpine
 
 # Устанавливаем рабочую директорию
 WORKDIR /app

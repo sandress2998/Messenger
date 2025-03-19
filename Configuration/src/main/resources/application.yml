@@ -7,13 +7,9 @@ spring:
     config:
       server:
         native:
-          searchLocations: classpath:/,classpath:/config,classpath:/config/{application}
-
-
+          searchLocations: classpath:/config,classpath:/config/{application}
 server:
-  port:
-    8000
-
+  port: 8000
 management:
   endpoints:
     web:
@@ -22,7 +18,6 @@ management:
   endpoint:
     health:
       show-details: always
-
 logging:
   level:
     org.springframework.cloud: DEBUG

@@ -1,0 +1,21 @@
+server:
+  port: 8083
+eureka:
+  client:
+    service-url:
+      defaultZone: http://discovery-service:8761/eureka
+
+spring:
+  application:
+    name: user-service
+  r2dbc:
+    url: r2dbc:postgresql://postgres:5432/postgres_database
+    username: username
+    password: password
+
+logging:
+  level:
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.postgresql: DEBUG
+    web: debug
+    kafka: debug

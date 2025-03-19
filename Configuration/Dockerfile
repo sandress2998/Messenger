@@ -1,9 +1,8 @@
 # Используем официальный образ Gradle для сборки
 FROM gradle:7.6.1-jdk17 AS build
-
+RUN apt-get install -y curl
 # Устанавливаем рабочую директорию
 WORKDIR /app
-
 # Копируем только файлы, необходимые для загрузки зависимостей
 COPY build.gradle.kts /app/build.gradle.kts
 COPY settings.gradle.kts /app/settings.gradle.kts
@@ -15,7 +14,6 @@ COPY gradlew /app/gradlew
 # Загружаем зависимости (они будут закешированы в слое Docker)
 # Даем права на выполнение скрипта gradlew
 RUN chmod +x gradlew
-
 # Скачиваем зависимости (без сборки проекта)
 RUN ./gradlew dependencies --no-daemon --refresh-dependencies
 

@@ -8,8 +8,8 @@ spring:
     name: presence-service
   data:
     redis:
-      host: presence-redis
-      port: 6381
+      host: redis
+      port: 6379
   kafka:
     bootstrap-servers: kafka:9092
 

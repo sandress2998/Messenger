@@ -8,8 +8,8 @@ spring:
     name: websocket-service
   data:
     redis:
-      host: websocket-redis
-      port: 6380
+      host: redis
+      port: 6379
   kafka:
     bootstrap-servers: kafka:9092
 

@@ -1,11 +1,21 @@
 spring:
-  r2dbc:
-    url: r2dbc:postgresql://localhost:5432/ChatServiceMainDatabase
-    username: postgres
-    password: 24062005
-server:
-  port: 8080
+  profiles:
+    active: dev
+  application:
+    name: chat-service
+  cloud:
+    config:
+      uri: http://config-service:8000
+      fail-fast: true
+      allow-override: true
+  config:
+    import: configserver:http://config-service:8000
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh
+
 logging:
   level:
-    web: debug
-    kafka: debug
+    org.springframework.cloud: DEBUG

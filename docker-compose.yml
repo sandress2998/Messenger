@@ -1,5 +1,8 @@
 services:
   discovery-service:
+    build:
+      context: ./Discovery
+      dockerfile: Dockerfile
     image: discovery-service:latest  # Укажите свой образ для config-service
     container_name: discovery-service
     # Путь к директории с Dockerfile для config-service
@@ -10,9 +13,11 @@ services:
 
 
   config-service:
+    build:
+      context: ./Configuration
+      dockerfile: Dockerfile
     image: config-service:latest  # Укажите свой образ для config-client-1
     container_name: config-service
-
     ports:
       - "8000:8000"  # Порт, на котором будет работать config-client-1
     depends_on:
@@ -23,13 +28,11 @@ services:
       test: [ "CMD", "curl", "-f", "http://config-service:8000/actuator/health" ]
       interval: 10s
       timeout: 5s
-      retries: 10
-
+      retries: 3
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
-
     ports:
       - "2181:2181"
     environment:
@@ -38,14 +41,13 @@ services:
     networks:
       - messenger-network
 
-
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
     depends_on:
       - zookeeper
-
     ports:
+      - "9092:9092"
       - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
@@ -57,11 +59,12 @@ services:
     networks:
       - messenger-network
 
-
   gateway:
+    build:
+      context: ./Gateway
+      dockerfile: Dockerfile
     image: gateway:latest  # Укажите свой образ для config-client-1
     container_name: gateway
-
     ports:
       - "8080:8080"  # Порт, на котором будет работать config-client-1
     depends_on:
@@ -71,14 +74,47 @@ services:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"  # Задержка перед запуском клиента
 
+  chat-service:
+    build:
+      context: ./ChatService
+      dockerfile: Dockerfile
+    image: chat-service:latest
+    container_name: chat-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
+
+  user-service:
+    build:
+      context: ./UserService
+      dockerfile: Dockerfile
+    image: user-service:latest
+    container_name: user-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      config-service:
+        condition: service_healthy
+    networks:
+      - messenger-network
+    command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
 
   message-handler-service:
+    build:
+      context: ./MessageHandler
+      dockerfile: Dockerfile
     image: message-handler-service:latest
     container_name: message-handler-service
-
     ports:
       - "8091:8091"
     depends_on:
+      kafka:
+        condition: service_started
       config-service:
         condition: service_healthy
     networks:
@@ -87,6 +123,9 @@ services:
 
 
   websocket-service:
+    build:
+      context: ./WebSocket
+      dockerfile: Dockerfile
     image: websocket-service:latest
     container_name: websocket-service
 
@@ -95,7 +134,7 @@ services:
     depends_on:
       config-service:
         condition: service_healthy
-      websocket-redis:
+      redis:
         condition: service_started
       kafka:
         condition: service_started
@@ -104,21 +143,32 @@ services:
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
 
 
-  websocket-redis:
+  redis:
     image: redis:latest
-    container_name: websocket-redis
-
+    container_name: redis
     ports:
-      - "6380:6380"  # Хост:контейнер
+      - "6379:6379"  # Хост:контейнер
     volumes:
-      - ./WebSocket/redis_config/redis.conf:/usr/local/etc/redis/redis.conf  # Монтируем конфигурационный файл
-      - websocket_redis_data:/data
+      - redis_data:/data
     networks:
       - messenger-network
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]  # Указываем конфигурационный файл
 
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: messenger
+      MONGO_INITDB_ROOT_USERNAME: username
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - mongodb_data:/data/db
 
   authentication-service:
+    build:
+      context: ./Authentication
+      dockerfile: Dockerfile
     image: authentication-service:latest  # Укажите свой образ для config-client-1
     container_name: authentication-service
 
@@ -127,44 +177,34 @@ services:
     depends_on:
       config-service:
         condition: service_healthy
-      authentication-postgres:
+      postgres:
         condition: service_started
-      authentication-redis:
+      redis:
         condition: service_started
     networks:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
 
 
-  authentication-postgres:
+  postgres:
     image: postgres:latest
-    container_name: authentication-postgres-db
+    container_name: postgres-db
     environment:
-      POSTGRES_USER: user
+      POSTGRES_USER: username
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: password_database
+      POSTGRES_DB: postgres_database
 
     ports:
       - "5432:5432"
     volumes:
-      - authentication_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - messenger-network
-
-
-  authentication-redis:
-    image: redis:latest
-    container_name: authentication-redis
-
-    ports:
-      - "6379:6379"
-    volumes:
-      - authentication_redis_data:/data
-    networks:
-      - messenger-network
-
 
   presence-service:
+    build:
+      context: ./Presence
+      dockerfile: Dockerfile
     image: presence-service:latest  # Укажите свой образ для config-client-1
     container_name: presence-service
 
@@ -173,7 +213,7 @@ services:
     depends_on:
       config-service:
         condition: service_healthy
-      presence-redis:
+      redis:
         condition: service_started
       kafka:
         condition: service_started
@@ -181,25 +221,10 @@ services:
       - messenger-network
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
 
-
-  presence-redis:
-    image: redis:latest
-    container_name: presence-redis
-
-    ports:
-      - "6381:6381"
-    volumes:
-      - ./Presence/redis_config/redis.conf:/usr/local/etc/redis/redis.conf  # Монтируем конфигурационный файл
-      - presence_redis_data:/data
-    networks:
-      - messenger-network
-    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]  # Указываем конфигурационн
-
 volumes:
-  authentication_postgres_data:
-  authentication_redis_data:
-  websocket_redis_data:
-  presence_redis_data:
+  postgres_data:
+  redis_data:
+  mongodb_data:
 
 networks:
   messenger-network:
