@@ -14,7 +14,7 @@ class ExceptionHandler {
     fun handleNotFoundException(ex : NotFoundException) : ResponseEntity<ErrorResponse> {
         val errorResponse = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
-            message = ex.message ?: "Internal server error",
+            message = ex.message ?: "Not found",
         )
         return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
     }

@@ -7,7 +7,7 @@ import java.util.*
 @Document(collection = "messages")
 data class Message(
     @Id
-    val id: UUID? = null ,
+    val id: UUID? = null,
     val senderId: UUID,
     val chatId: UUID,
     val text: String,

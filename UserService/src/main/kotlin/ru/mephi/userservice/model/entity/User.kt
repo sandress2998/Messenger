@@ -10,5 +10,5 @@ data class User (
     @Id
     val id : UUID? = null,
     val username : String,
-    val email : String,
+    val email : String
 )

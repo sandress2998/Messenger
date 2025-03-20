@@ -8,6 +8,7 @@ spring:
       server:
         native:
           searchLocations: classpath:/config,classpath:/config/{application}
+
 server:
   port: 8000
 management:

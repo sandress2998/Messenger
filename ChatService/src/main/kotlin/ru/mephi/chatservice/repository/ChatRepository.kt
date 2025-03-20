@@ -9,5 +9,6 @@ import java.util.UUID
 @Repository
 interface ChatRepository : ReactiveCrudRepository<Chat, UUID> {
     fun getChatById(id: UUID): Mono<Chat>
+
     fun deleteChatById(id: UUID): Mono<Void>
 }

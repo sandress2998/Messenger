@@ -18,8 +18,7 @@ import ru.mephi.authentication.property.SecurityProperties
 @RestController
 @RequestMapping("/auth")
 class AuthorizationControllerImpl(
-    private val securityService: SecurityService,
-    private val securityProperties: SecurityProperties
+    private val securityService: SecurityService
 ): AuthorizationController {
     @PostMapping("/signin")
     override fun signin(@RequestBody request: SigninRequest): Mono<BaseResponse> {

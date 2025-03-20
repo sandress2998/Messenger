@@ -14,7 +14,6 @@ import java.util.*
 @Service
 @KafkaListener(topics = ["messages-incoming"], groupId = "message-handlers")
 class KafkaConsumerService(private val messageService: MessageService) {
-
     @KafkaHandler
     @Transactional
     fun createMessageProcess(
@@ -22,8 +21,8 @@ class KafkaConsumerService(private val messageService: MessageService) {
     ) {
         messageService.createMessage(incomingMessage)
             .subscribe(
-                {result -> println("Message_create processed successfully! : ${result}")}, //Дописать прокидывание в processed
-                {error -> println("Message_create processing error : ${error.message}!")}
+                { result -> println("Message_create processed successfully! : ${result}") }, //Дописать прокидывание в processed
+                { error -> println("Message_create processing error : ${error.message}!") }
             )
     }
 
@@ -32,10 +31,11 @@ class KafkaConsumerService(private val messageService: MessageService) {
     fun updateMessageProcessed(
         @Payload incomingMessage: MessageUpdateDTO
     ) {
+
         messageService.updateMessage(incomingMessage)
             .subscribe(
-                {result -> println("Message_create processed successfully! : ${result}")}, //Дописать прокидывание в processed
-                {error -> println("Message_create processing error : ${error.message}!")}
+                { result -> println("Message_create processed successfully! : ${result}") }, //Дописать прокидывание в processed
+                { error -> println("Message_create processing error : ${error.message}!") }
             )
     }
 
@@ -43,11 +43,11 @@ class KafkaConsumerService(private val messageService: MessageService) {
     @Transactional
     fun deleteMessageProcessed(
         @Payload incomingMessage: UUID
-    ){
+    ) {
         messageService.deleteMessageById(incomingMessage)
             .subscribe(
-                {result -> println("Message_delete processed successfully! : ${result}")}, //Дописать прокидывание в processed
-                {error -> println("Message_delete processing error : ${error.message}!")}
+                { result -> println("Message_delete processed successfully! : ${result}") }, //Дописать прокидывание в processed
+                { error -> println("Message_delete processing error : ${error.message}!") }
             )
     }
 }

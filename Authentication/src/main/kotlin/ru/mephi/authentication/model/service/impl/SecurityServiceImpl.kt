@@ -18,12 +18,12 @@ import ru.mephi.authentication.model.exception.UnauthorizedException
 import ru.mephi.authentication.model.service.JwtService
 import ru.mephi.authentication.model.service.RefreshService
 import ru.mephi.authentication.model.service.SecurityService
-import ru.mephi.authentication.model.service.UserService
+import ru.mephi.authentication.model.service.PasswordService
 
 @Service
 class SecurityServiceImpl (
     private val jwtService: JwtService,
-    private val userService: UserService,
+    private val passwordService: PasswordService,
     private val refreshService: RefreshService
 ): SecurityService {
     val encoder = BCryptPasswordEncoder()
@@ -33,7 +33,7 @@ class SecurityServiceImpl (
         val password = request.password
         val email = request.email
 
-        return userService.findByEmail(email)
+        return passwordService.findByEmail(email)
             .flatMap { user ->
                 if (!encoder.matches(password, user.hashedPassword)) {
                     Mono.just(BadResponse(email, "Wrong password"))
@@ -55,13 +55,13 @@ class SecurityServiceImpl (
 
         log.info("Trying to register user with email: $email")
 
-        return userService.findByEmail(email)
+        return passwordService.findByEmail(email)
             .flatMap { user ->
                 log.info("User with email already exists: $email")
                 Mono.error<BaseResponse>(UnauthorizedException("User with such an email already exists"))
             }
             .switchIfEmpty(
-                userService.create(email, encoder.encode(password))
+                passwordService.create(email, encoder.encode(password))
                     .then(Mono.zip(
                         refreshService.generateToken(email),
                         Mono.just(jwtService.generateToken(email))

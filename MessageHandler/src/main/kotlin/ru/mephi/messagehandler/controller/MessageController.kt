@@ -14,12 +14,12 @@ import java.util.*
 @RestController
 class MessageController (
     private val messageService : MessageService,
-    private val kafkaProducer: KafkaProducerService
 ){
     @GetMapping("/chats/{chatId}/messages")
     fun getMessages(@PathVariable("chatId") chatId : UUID):  Flux<Message> {
         return messageService.getMessagesByChat(chatId)
     }
+
     @PatchMapping("/messages/{messageId}")
     fun updateMessage(
         @PathVariable("messageId") messageId : UUID,
@@ -27,6 +27,7 @@ class MessageController (
     ) : Mono<Message> {
         return messageService.updateMessage(message.copy(id = messageId))
     }
+
     @PostMapping("/chats/{chatId}/messages")
     fun postMessage(
         @PathVariable("chatId") chatId : UUID,
@@ -42,6 +43,7 @@ class MessageController (
         // Добавить проверку наличия таково чата
         return messageService.deleteMessageByChatId(chatId)
     }
+
     @DeleteMapping("/chats/{chatId}/members/{senderId}")
     fun deleteMessagesInChatBySenderId(
         @PathVariable("chatId") chatId : UUID,
@@ -50,6 +52,7 @@ class MessageController (
         // Добавить проверку наличия таково чата
         return messageService.deleteMessagesByChatIdAndUserId(chatId, senderId)
     }
+
     @DeleteMapping("/messages/{messageId}")
     fun deleteMessage(@PathVariable("messageId") messageId : UUID) : Mono<Void> {
         return messageService.deleteMessageById(messageId)

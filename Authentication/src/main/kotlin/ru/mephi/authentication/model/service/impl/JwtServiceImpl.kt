@@ -7,7 +7,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.mephi.authentication.model.service.JwtService
-import ru.mephi.authentication.model.service.UserService
 import ru.mephi.authentication.property.SecurityProperties
 import java.security.Key
 import java.util.*

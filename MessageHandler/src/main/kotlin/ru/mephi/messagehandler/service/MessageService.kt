@@ -32,6 +32,7 @@ class MessageService(
                 }
         }
     }
+
     @Transactional
     fun createMessage(message: MessageCreateDTO): Mono<Message> {
         return messageRepository.save(Message(UUID.randomUUID(),message.senderId,message.chatId,message.text,Date()))
@@ -39,6 +40,7 @@ class MessageService(
 //          messageRepository.save(Message(id,message.senderId,message.chatId,message.text,Date()))
 //      }
     }
+
     @Transactional
     fun updateMessage(message: MessageUpdateDTO): Mono<Message> {
         return messageRepository.findMessageById(id = message.id)
@@ -55,14 +57,14 @@ class MessageService(
     fun deleteMessageById(messageId : UUID): Mono<Void> {
         return messageRepository.deleteMessageById(messageId)
     }
+
     @Transactional
     fun deleteMessagesByChatIdAndUserId(chatId : UUID,userId : UUID): Mono<Void> {
         return messageRepository.deleteMessagesByChatIdAndSenderId(chatId,userId)
     }
+
     @Transactional
     fun deleteMessageByChatId(chatId : UUID): Mono<Void> {
         return messageRepository.deleteMessagesByChatId(chatId)
     }
-
-
 }

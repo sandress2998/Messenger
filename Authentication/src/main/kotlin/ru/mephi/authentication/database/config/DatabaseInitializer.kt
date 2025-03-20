@@ -11,7 +11,7 @@ class DatabaseInitializer(private val databaseClient: DatabaseClient) {
     fun init() {
         databaseClient.sql(
             """
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS passwords (
                 id SERIAL PRIMARY KEY,
                 email VARCHAR(255) NOT NULL UNIQUE,
                 hashed_password VARCHAR(255) NOT NULL

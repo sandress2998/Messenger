@@ -17,11 +17,12 @@ class ChatService(
     private val chatRepository: ChatRepository,
     private val chatMembersRepository:ChatMembersRepository
 ) {
-    //Операции только с чатами
+    // Операции только с чатами
     @Transactional
     fun createChat(chat: Chat): Mono<Chat>{
         return chatRepository.save(chat)
     }
+
     @Transactional
     fun updateChat(chat: Chat): Mono<Chat>{
         //return chatRepository.save(chat)
@@ -33,6 +34,7 @@ class ChatService(
                 Mono.error(NotFoundException("Chat ${chat.id} not found"))
             }
     }
+
     @Transactional
     fun deleteChat(chatId: UUID): Mono<Void>{
         return chatRepository.deleteById(chatId).then(deleteChatMembers(chatId))
@@ -47,6 +49,7 @@ class ChatService(
         return chatMembersRepository.getChatMembersByUserId(userId)
             .flatMap { chatMembers -> Mono.just(chatMembers.chatId) }
     }
+
     fun getChatsByMemberId(userId: UUID): Flux<Chat>{
         return chatMembersRepository.getChatMembersByUserId(userId)
             .flatMap { chatMembers -> chatRepository.getChatById(chatMembers.chatId) }
@@ -57,6 +60,7 @@ class ChatService(
         return chatMembersRepository.getChatMembersByChatId(chatId)
             .flatMap { chatMembers -> Mono.just(chatMembers.userId) }
     }
+
     fun getChatMembersByChatId(chatId: UUID): Flux<ChatMember>{
         return chatMembersRepository.getChatMembersByChatId(chatId)
     }
@@ -66,6 +70,7 @@ class ChatService(
     fun addChatMemberToChat(chatMember: ChatMember): Mono<ChatMember>{
         return chatMembersRepository.save(chatMember)
     }
+
     @Transactional
     fun updateChatMemberToChat(chatMember: ChatMember): Mono<ChatMember>{
         return chatMembersRepository.getChatMemberByChatIdAndUserId(chatId = chatMember.chatId,memberId = chatMember.userId)
@@ -73,10 +78,12 @@ class ChatService(
                 Mono.error(NotFoundException("ChatMember not found"))
             }
     }
+
     @Transactional
     fun deleteChatMemberFromChat(chatId: UUID, memberId: UUID): Mono<Void>{
         return chatMembersRepository.deleteChatMembersByChatIdAndUserId(chatId, memberId)
     }
+
     @Transactional
     fun deleteChatMembers(chatId: UUID): Mono<Void>{
         return chatMembersRepository.deleteChatMembersByChatId(chatId)

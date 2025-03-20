@@ -36,7 +36,6 @@ dependencies {
 
     implementation("org.springframework.cloud:spring-cloud-starter-netflix-eureka-client")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.cloud:spring-cloud-starter-bootstrap")
 
     implementation("org.springframework.kafka:spring-kafka")
 

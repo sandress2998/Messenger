@@ -17,6 +17,7 @@ class UserController(
     fun addUser(@RequestBody user: CreateUserDTO) : Mono<User> {
         return userService.createUser(user)
     }
+
     @PatchMapping("/users/{userId}")
     fun updateUser(
         @RequestBody user: UpdateUserHttpDTO,
@@ -24,6 +25,7 @@ class UserController(
     ) : Mono<User> {
         return userService.updateUser(UpdateUserDTO(userId,user.username,user.email))
     }
+
     @GetMapping("/users/{userId}")
     fun getUserById(@PathVariable userId: UUID) : Mono<User> {
         return userService.getUser(userId)

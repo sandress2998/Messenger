@@ -11,7 +11,6 @@ import java.util.*
 @RestController
 @RequestMapping("/test")
 class TestMessageController (
-    private val messageService : MessageService,
     private val kafkaProducer: KafkaProducerService
 ){
     @PostMapping("/kafka")
@@ -21,6 +20,7 @@ class TestMessageController (
         kafkaProducer.sendCreateMessage(message)
         return Mono.just(message)
     }
+
     @PatchMapping("/kafka/{messageId}")
     fun patchKafkaMessage(
         @PathVariable("messageId") messageId : UUID,
@@ -29,6 +29,7 @@ class TestMessageController (
         kafkaProducer.sendUpdateMessage(message.copy(id = messageId))
         return Mono.just(message)
     }
+
     @DeleteMapping("/kafka/{messageId}")
     fun deleteKafkaMessage(
         @PathVariable("messageId") messageId : UUID,

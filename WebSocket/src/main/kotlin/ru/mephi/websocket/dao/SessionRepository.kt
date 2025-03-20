@@ -17,7 +17,7 @@ class SessionRepository(
 
 
     fun addSession(email: String, sessionId: String): Mono<Void> {
-        return reactiveSetOps.add(email, sessionId)
+        return reactiveSetOps.add("sessions:$email", sessionId)
             .flatMap {
                 reactiveRedisTemplate.expire(email, jwtTTL)
             }
@@ -25,16 +25,16 @@ class SessionRepository(
     }
 
     fun removeSession(email: String, sessionId: String): Mono<Void> {
-        return reactiveSetOps.remove(email, sessionId)
+        return reactiveSetOps.remove("sessions:$email", sessionId)
             .then()
     }
 
     fun getAllSessions(email: String): Flux<String> {
-        return reactiveSetOps.members(email)
+        return reactiveSetOps.members("sessions:$email")
     }
 
     fun removeAllSessions(email: String): Mono<Void> {
-        return reactiveSetOps.delete(email)
+        return reactiveSetOps.delete("sessions:$email")
             .then()
     }
 }

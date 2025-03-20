@@ -10,10 +10,13 @@ import java.util.UUID
 
 @Repository
 interface ChatMembersRepository : ReactiveCrudRepository<ChatMember, UUID> {
-
     fun getChatMembersByUserId(userId: UUID): Flux<ChatMember>
+
     fun getChatMembersByChatId(chatId: UUID): Flux<ChatMember>
+
     fun deleteChatMembersByChatId(chatId: UUID): Mono<Void>
+
     fun getChatMemberByChatIdAndUserId(chatId: UUID, memberId: UUID): Mono<ChatMember>
+
     fun deleteChatMembersByChatIdAndUserId(chatId: UUID, memberId: UUID): Mono<Void>
 }

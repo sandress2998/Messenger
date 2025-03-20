@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Mono
 import ru.mephi.authentication.dto.request.JwtTokenRequest
 import ru.mephi.authentication.database.dao.RefreshRepository
-import ru.mephi.authentication.database.dao.UserRepository
+import ru.mephi.authentication.database.dao.PasswordRepository
 import ru.mephi.authentication.database.entity.RefreshToken
 import ru.mephi.authentication.dto.request.SignoutRequest
 import ru.mephi.authentication.model.exception.UnauthorizedException
@@ -16,7 +16,7 @@ import java.util.*
 @Service
 class RefreshServiceImpl(
     private val refreshRepository: RefreshRepository,
-    private val userRepository: UserRepository
+    private val passwordRepository: PasswordRepository
 ): RefreshService {
     val encoder = BCryptPasswordEncoder()
 
@@ -26,7 +26,7 @@ class RefreshServiceImpl(
         val token = UUID.randomUUID().toString()
         val hashedToken = encoder.encode(token)
 
-        return userRepository.findByEmail(email)
+        return passwordRepository.findByEmail(email)
             .switchIfEmpty(Mono.error(UnauthorizedException("Email not found"))) // Если пользователь не найден
             .flatMap { user ->
                 refreshRepository.addToken(user.email, hashedToken)

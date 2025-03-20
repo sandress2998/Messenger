@@ -7,7 +7,6 @@ import org.springframework.kafka.config.TopicBuilder
 
 @Configuration
 class KafkaTopicConfig {
-
     @Bean
     fun messageIncomingTopic() : NewTopic {
         println("Topic incoming message CREATED")
@@ -15,6 +14,7 @@ class KafkaTopicConfig {
             .name("messages-incoming")
             .build()
     }
+
     @Bean
     fun messageProcessedTopic() : NewTopic {
         return TopicBuilder

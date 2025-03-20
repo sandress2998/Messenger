@@ -2,12 +2,13 @@ package ru.mephi.userservice.model.dto
 
 import java.util.*
 
-data class UserDetails(
+data class UserDetails (
     val id : UUID,
     val username: String,
 )
-data class UserPersonalDetails(
+
+data class UserPersonalDetails (
     val id : UUID,
     val username: String,
-    val email: String,
+    val email: String
 )

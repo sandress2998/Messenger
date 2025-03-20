@@ -20,6 +20,7 @@ class UserService(
     fun createUser(user : CreateUserDTO): Mono<User>{
         return userRepository.save(User(username = user.username , email = user.email))
     }
+
     @Transactional
     fun updateUser(user : UpdateUserDTO): Mono<User>{
         return userRepository.findUserById(user.id)
@@ -27,6 +28,7 @@ class UserService(
                 Mono.error(Exception("User not found"))
             }.flatMap { userRepository.save(it.copy(username = user.username , email = user.email)) }
     }
+
     @Transactional
     fun deleteUser(userId : UUID): Mono<Void>{
         return userRepository.deleteUserById(userId)
@@ -35,6 +37,7 @@ class UserService(
     fun getUser(id : UUID): Mono<User>{
         return userRepository.findUserById(id)
     }
+
     fun getUsers(): Flux<User> {
         return userRepository.findAll()
     }

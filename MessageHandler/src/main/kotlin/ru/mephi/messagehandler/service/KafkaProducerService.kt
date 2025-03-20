@@ -13,7 +13,6 @@ import java.util.*
 class KafkaProducerService(
     private val kafkaTemplate: KafkaTemplate<String, MessageCreateDTO>
 ) {
-
     fun sendCreateMessage(message: MessageCreateDTO) {
         val sendMessage = MessageBuilder
             .withPayload(message)
@@ -24,6 +23,7 @@ class KafkaProducerService(
         }
         println(sendMessage)
     }
+
     fun sendUpdateMessage(message: MessageUpdateDTO) {
         val sendMessage = MessageBuilder
             .withPayload(message)
@@ -34,6 +34,7 @@ class KafkaProducerService(
         }
         println(sendMessage)
     }
+
     fun sendDeleteMessage(messageId : UUID) {
         val sendMessage = MessageBuilder
             .withPayload(messageId)

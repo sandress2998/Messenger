@@ -10,9 +10,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class ExceptionHandler {
 
-    @ExceptionHandler(ru.mephi.chatservice.models.exception.NotFoundException::class)
-    fun handleNotFoundException(ex : ru.mephi.chatservice.models.exception.NotFoundException) : ResponseEntity<ru.mephi.chatservice.models.responce.ErrorResponse> {
-        val errorResponse = ru.mephi.chatservice.models.responce.ErrorResponse(
+    @ExceptionHandler(NotFoundException::class)
+    fun handleNotFoundException(ex : NotFoundException) : ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(
             status = HttpStatus.NOT_FOUND.value(),
             message = ex.message ?: "Internal server error",
         )

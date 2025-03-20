@@ -5,5 +5,5 @@ import java.util.*
 
 data class MemberInfoDTO (
     val userId: UUID = UUID.randomUUID(),
-    val role: ru.mephi.chatservice.models.ChatRole = ru.mephi.chatservice.models.ChatRole.MEMBER
+    val role: ChatRole = ChatRole.MEMBER
 )

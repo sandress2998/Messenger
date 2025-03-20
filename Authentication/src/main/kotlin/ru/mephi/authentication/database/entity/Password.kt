@@ -4,8 +4,8 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 
-@Table(name = "users")
-class User(
+@Table(name = "passwords")
+class Password(
     @Column
     var email: String,
 
