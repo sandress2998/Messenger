@@ -85,7 +85,7 @@ class RefreshRepository(
     }
 
     // Удалить все токены для пользователя
-    fun deleteTokens(email: String): Mono<Boolean> {
+    fun removeAllTokens(email: String): Mono<Boolean> {
         return reactiveRedisTemplate.delete("refresh:$email")
             .map { deletedCount -> deletedCount > 0 }
     }

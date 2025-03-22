@@ -1,6 +1,6 @@
 package ru.mephi.authentication.dto.request
 
-data class JwtTokenRequest (
+data class RefreshRequest (
     val email: String,
     val refreshToken: String
 )

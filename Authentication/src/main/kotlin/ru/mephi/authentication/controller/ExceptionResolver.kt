@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.server.ServerWebExchange
-import ru.mephi.authentication.dto.response.bad.ErrorResponse
+import ru.mephi.authentication.dto.response.ErrorResponse
 import ru.mephi.authentication.model.exception.UnauthorizedException
 
 

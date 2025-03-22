@@ -1,18 +1,11 @@
 package ru.mephi.authentication.controller.impl
 
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import ru.mephi.authentication.controller.AuthorizationController
-import ru.mephi.authentication.dto.request.JwtTokenRequest
-import ru.mephi.authentication.dto.request.SigninRequest
-import ru.mephi.authentication.dto.request.SignoutRequest
-import ru.mephi.authentication.dto.request.SignupRequest
-import ru.mephi.authentication.dto.response.BaseResponse
+import ru.mephi.authentication.dto.request.*
+import ru.mephi.authentication.dto.response.*
 import ru.mephi.authentication.model.service.SecurityService
-import ru.mephi.authentication.property.SecurityProperties
 
 
 @RestController
@@ -21,30 +14,37 @@ class AuthorizationControllerImpl(
     private val securityService: SecurityService
 ): AuthorizationController {
     @PostMapping("/signin")
-    override fun signin(@RequestBody request: SigninRequest): Mono<BaseResponse> {
+    override fun signin(@RequestBody request: SigninRequest): Mono<SigninResponse> {
         return securityService.signin(request)
             .doOnNext { response -> println("Signin response: $response") }
             .doOnError { error -> println("Signin error: ${error.message}") }
     }
 
     @PostMapping("/signup")
-    override fun signup(@RequestBody request: SignupRequest): Mono<BaseResponse> {
+    override fun signup(@RequestBody request: SignupRequest): Mono<SignupResponse> {
         return securityService.signup(request)
             .doOnNext { response -> println("Signup response: $response") }
             .doOnError { error -> println("Signup error: ${error.message}") }
     }
 
     @PostMapping("/refresh")
-    override fun refresh(@RequestBody request: JwtTokenRequest): Mono<BaseResponse> {
-        return securityService.updateJwtToken(request)
+    override fun refresh(@RequestBody request: RefreshRequest): Mono<RefreshResponse> {
+        return securityService.refresh(request)
             .doOnNext { response -> println("Refresh response: $response") }
             .doOnError { error -> println("Refresh error: ${error.message}") }
     }
 
     @PostMapping("/signout")
-    override fun signout(@RequestBody request: SignoutRequest): Mono<BaseResponse> {
-        return securityService.signout(request)
+    override fun signout(@RequestHeader("X-Email") email: String, @RequestBody request: SignoutRequest): Mono<SignoutResponse> {
+        return securityService.signout(email, request)
             .doOnNext { response -> println("Refresh response: $response") }
             .doOnError { error -> println("Refresh error: ${error.message}") }
+    }
+
+    @DeleteMapping("/invalidate_all")
+    override fun invalidateAllTokens(@RequestHeader("X-Email") email: String): Mono<InvalidateAllResponse> {
+        return securityService.invalidateAllTokens(email)
+            .doOnNext { response -> println("Response: $response") }
+            .doOnError { error -> println("Error: ${error.message}") }
     }
 }

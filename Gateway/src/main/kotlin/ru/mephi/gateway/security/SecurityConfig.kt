@@ -17,7 +17,9 @@ class SecurityConfig(private val jwtFilter: JwtFilter) {
             .csrf { csrf -> csrf.disable() } // Отключаем CSRF
             .authorizeExchange { exchanges ->
                 exchanges
-                    .pathMatchers("/auth/**").permitAll() // Разрешаем доступ к /auth/** без аутентификации
+                    .pathMatchers("/auth/signup").permitAll() // Разрешаем доступ к /auth/** без аутентификации
+                    .pathMatchers("/auth/signin").permitAll()
+                    .pathMatchers("/auth/refresh").permitAll()
                     .anyExchange().authenticated() // Все остальные запросы требуют аутентификации
             }
             .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION) // Добавляем JwtFilter

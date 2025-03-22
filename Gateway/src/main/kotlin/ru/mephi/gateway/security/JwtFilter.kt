@@ -28,7 +28,10 @@ class JwtFilter(
         val response = exchange.response
 
         // Пропускаем публичные маршруты
-        if (request.uri.path.startsWith("/auth/")) {
+        if (request.uri.path.startsWith("/auth/signup" ) ||
+            request.uri.path.startsWith("/auth/signin" ) ||
+            request.uri.path.startsWith("/auth/refresh" )
+            ) {
             return chain.filter(exchange)
         }
 
@@ -47,15 +50,24 @@ class JwtFilter(
         try {
             // Проверяем токен
             val claims = jwtService.validateToken(token)
-            val username = claims.subject
+            val email = claims.subject
 
             // Создаем объект Authentication
             val authorities = Collections.singletonList(SimpleGrantedAuthority("ROLE_USER")) // Роли пользователя
-            val authentication: Authentication = UsernamePasswordAuthenticationToken(username, null, authorities)
+            val authentication: Authentication = UsernamePasswordAuthenticationToken(email, null, authorities)
 
             // Устанавливаем аутентификацию в SecurityContext
             val securityContext = SecurityContextImpl(authentication)
-            return chain.filter(exchange)
+            // Добавляем email в заголовок запроса
+            val mutatedRequest = request.mutate()
+                .header("X-Email", email) // Добавляем email в заголовок
+                .build()
+
+            // Создаем изменённый ServerWebExchange
+            val mutatedExchange = exchange.mutate().request(mutatedRequest).build()
+
+            // Передаем изменённый запрос дальше
+            return chain.filter(mutatedExchange)
                 .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)))
         } catch (ex: RuntimeException) {
             return writeErrorResponse(
