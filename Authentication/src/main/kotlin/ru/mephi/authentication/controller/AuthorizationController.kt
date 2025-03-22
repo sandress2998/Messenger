@@ -12,7 +12,7 @@ interface AuthorizationController {
 
     fun refresh(request: RefreshRequest): Mono<RefreshResponse>
 
-    fun signout(email: String, request: SignoutRequest): Mono<SignoutResponse>
+    fun signout(userId: String, request: SignoutRequest): Mono<SignoutResponse>
 
-    fun invalidateAllTokens(email: String): Mono<InvalidateAllResponse>
+    fun invalidateAllTokens(userId: String): Mono<InvalidateAllResponse>
 }

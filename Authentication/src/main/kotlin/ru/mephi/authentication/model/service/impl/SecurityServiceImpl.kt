@@ -28,12 +28,13 @@ class SecurityServiceImpl (
 
         return passwordService.findByEmail(email)
             .flatMap { user ->
+                val userId = user.userId.toString()
                 if (!encoder.matches(password, user.hashedPassword)) {
                     Mono.error(UnauthorizedException("Wrong password"))
                 } else {
-                    refreshService.generateToken(email)
+                    refreshService.generateToken(userId)
                         .flatMap { refreshToken ->
-                            val jwtToken = jwtService.generateToken(email)
+                            val jwtToken = jwtService.generateToken(userId)
                             Mono.just<SigninResponse>(SigninResponse(refreshToken, jwtToken))
                         }
                 }
@@ -48,21 +49,24 @@ class SecurityServiceImpl (
         log.info("Trying to register user with email: $email")
 
         return passwordService.findByEmail(email)
-            .flatMap { user ->
+            .flatMap {
                 log.info("User with email already exists: $email")
                 Mono.error<SignupResponse>(UnauthorizedException("User with such an email already exists"))
             }
             .switchIfEmpty(
                 passwordService.create(email, encoder.encode(password))
-                    .then(Mono.zip(
-                        refreshService.generateToken(email),
-                        Mono.just(jwtService.generateToken(email))
-                    ))
-                    .flatMap { tuple ->
-                        val refreshToken = tuple.t1
-                        val jwtToken = tuple.t2
-                        Mono.just(SignupResponse(refreshToken, jwtToken))
-                    }
+                .flatMap { user ->
+                    val userId = user.userId.toString()
+                    Mono.zip(
+                        refreshService.generateToken(userId),
+                        Mono.just(jwtService.generateToken(userId))
+                        )
+                }
+                .flatMap { tuple ->
+                    val refreshToken = tuple.t1
+                    val jwtToken = tuple.t2
+                    Mono.just(SignupResponse(refreshToken, jwtToken))
+                }
             )
     }
 
@@ -70,23 +74,28 @@ class SecurityServiceImpl (
         val email: String = request.email
         val refreshToken = request.refreshToken
 
-        return refreshService.validateToken(email, refreshToken)
-            .flatMap { isValid ->
-                if (!isValid) {
-                    Mono.error(UnauthorizedException("Token is invalid"))
-                } else {
-                    refreshService.updateToken(email, refreshToken)
-                }
+        return passwordService.findByEmail(email)
+            .flatMap { user ->
+                val userId = user.userId.toString()
+                refreshService.validateToken(userId, refreshToken)
+                    .flatMap { isValid ->
+                        if (!isValid) {
+                            Mono.error(UnauthorizedException("Token is invalid"))
+                        } else {
+                            refreshService.updateToken(userId, refreshToken)
+                        }
+                    }
+                    .flatMap { updatedRefreshToken ->
+                        val jwtToken = jwtService.generateToken(email)
+                        Mono.just(RefreshResponse(updatedRefreshToken, jwtToken))
+                    }
             }
-            .flatMap { updatedRefreshToken ->
-                val jwtToken = jwtService.generateToken(email)
-                Mono.just(RefreshResponse(updatedRefreshToken, jwtToken))
-            }
+            .switchIfEmpty(Mono.error(UnauthorizedException("User with such an email $email not found")))
     }
 
-    override fun signout(email: String, request: SignoutRequest): Mono<SignoutResponse> {
+    override fun signout(userId: String, request: SignoutRequest): Mono<SignoutResponse> {
 
-        return refreshService.removeToken(email, request.refresh)
+        return refreshService.removeToken(userId, request.refresh)
             .map { isRemoved ->
                 if (isRemoved) {
                     SignoutResponse("true")
@@ -96,9 +105,9 @@ class SecurityServiceImpl (
             }
     }
 
-    override fun invalidateAllTokens(email: String): Mono<InvalidateAllResponse> {
+    override fun invalidateAllTokens(userId: String): Mono<InvalidateAllResponse> {
 
-        return refreshService.removeAllTokens(email)
+        return refreshService.removeAllTokens(userId)
             .map { isSucceed ->
             if (isSucceed) {
                 InvalidateAllResponse("Tokens were deleted")

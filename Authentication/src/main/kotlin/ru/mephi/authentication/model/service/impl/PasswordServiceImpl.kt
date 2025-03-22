@@ -5,8 +5,8 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.authentication.database.dao.PasswordRepository
 import ru.mephi.authentication.database.entity.Password
-import ru.mephi.authentication.model.exception.UnauthorizedException
 import ru.mephi.authentication.model.service.PasswordService
+import java.util.*
 
 @Service
 class PasswordServiceImpl(
@@ -25,15 +25,26 @@ class PasswordServiceImpl(
     }
 
     override fun create(email: String, hashedPassword: String): Mono<Password> {
-        val user = Password(email, hashedPassword)
-
-        return passwordRepository.save(user)
-            .flatMap { savedUser ->
-                if (savedUser == null) {
-                    Mono.error(UnauthorizedException("Unsuccessful user saving"))
-                } else {
-                    Mono.just(savedUser)
-                }
+        return generateUniqueId()
+            .flatMap { id ->
+                val newUser = Password(email, hashedPassword, id)
+                passwordRepository.save(newUser)
             }
+    }
+
+    private fun generateUniqueId(): Mono<UUID> {
+        return Mono.defer {
+            val id = UUID.randomUUID()
+            passwordRepository.existsByUserId(id)
+                .flatMap { exists ->
+                    if (exists) {
+                        // Если ID уже существует, рекурсивно генерируем новый
+                        generateUniqueId()
+                    } else {
+                        // Если ID уникален, возвращаем его
+                        Mono.just(id)
+                    }
+                }
+        }
     }
 }

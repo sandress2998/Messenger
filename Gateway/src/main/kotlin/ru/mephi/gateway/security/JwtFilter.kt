@@ -50,17 +50,17 @@ class JwtFilter(
         try {
             // Проверяем токен
             val claims = jwtService.validateToken(token)
-            val email = claims.subject
+            val userId = claims.subject
 
             // Создаем объект Authentication
             val authorities = Collections.singletonList(SimpleGrantedAuthority("ROLE_USER")) // Роли пользователя
-            val authentication: Authentication = UsernamePasswordAuthenticationToken(email, null, authorities)
+            val authentication: Authentication = UsernamePasswordAuthenticationToken(userId, null, authorities)
 
             // Устанавливаем аутентификацию в SecurityContext
             val securityContext = SecurityContextImpl(authentication)
             // Добавляем email в заголовок запроса
             val mutatedRequest = request.mutate()
-                .header("X-Email", email) // Добавляем email в заголовок
+                .header("X-UserId", userId) // Добавляем email в заголовок
                 .build()
 
             // Создаем изменённый ServerWebExchange

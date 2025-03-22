@@ -19,22 +19,22 @@ class RefreshRepository(
     val encoder = BCryptPasswordEncoder()
 
     // Добавить refresh-токен для пользователя
-    fun addToken(email: String, hashedToken: String): Mono<Boolean> {
+    fun addToken(userId: String, hashedToken: String): Mono<Boolean> {
         val expiresAt = Instant.now().plus(Duration.ofDays(7))
         val score = expiresAt.epochSecond.toDouble() // Преобразуем expiresAt в score
         return reactiveRedisTemplate.opsForZSet()
-            .add("refresh:$email", hashedToken, score) // Добавляем hashedToken с score
+            .add("refresh:$userId", hashedToken, score) // Добавляем hashedToken с score
             .flatMap {
                 // Устанавливаем TTL для ключа (например, 7 дней)
-                reactiveRedisTemplate.expire("refresh:$email", Duration.ofDays(securityProperties.refreshTimeoutInDays))
+                reactiveRedisTemplate.expire("refresh:$userId", Duration.ofDays(securityProperties.refreshTimeoutInDays))
             }
     }
 
     // Получить все refresh-токены для пользователя
-    fun getTokens(email: String): Mono<List<RefreshToken>> {
+    fun getTokens(userId: String): Mono<List<RefreshToken>> {
         val range = Range.unbounded<Long>()
         return reactiveRedisTemplate.opsForZSet()
-            .rangeWithScores("refresh:$email", range) // Получаем все элементы с score
+            .rangeWithScores("refresh:$userId", range) // Получаем все элементы с score
             .collectList()
             .map { tuples ->
                 tuples.map { tuple ->
@@ -45,11 +45,11 @@ class RefreshRepository(
             }
     }
 
-    fun getActiveTokens(email: String): Mono<List<RefreshToken>> {
+    fun getActiveTokens(userId: String): Mono<List<RefreshToken>> {
         val currentTime = Instant.now().epochSecond.toDouble()
         val range = Range.rightUnbounded(Range.Bound.exclusive(currentTime)) // Диапазон: (currentTime, +∞)
         return reactiveRedisTemplate.opsForZSet()
-            .rangeByScoreWithScores("refresh:$email", range) // Получаем активные токены с score
+            .rangeByScoreWithScores("refresh:$userId", range) // Получаем активные токены с score
             .collectList()
             .map { tuples ->
                 tuples.map { tuple ->
@@ -61,38 +61,37 @@ class RefreshRepository(
     }
 
     // Если пользователь явно выйдет из аккаунта
-    fun removeToken(email: String, token: String): Mono<Long> {
+    fun removeToken(userId: String, token: String): Mono<Long> {
         val range = Range.unbounded<Long>()
         return reactiveRedisTemplate.opsForZSet()
-            .rangeWithScores("refresh:$email", range)
+            .rangeWithScores("refresh:$userId", range)
             .filter { tuple ->
                 val hashedToken = tuple.value.toString()
                 encoder.matches(token, hashedToken)
             }
             .flatMap { tupleToRemove ->
-                reactiveRedisTemplate.opsForZSet().remove("refresh:$email", tupleToRemove.value.toString())
+                reactiveRedisTemplate.opsForZSet().remove("refresh:$userId", tupleToRemove.value.toString())
             }
             .collectList()
             .map { removedTokens -> removedTokens.size.toLong() }
     }
 
     // Удалить refresh-токен для пользователя
-    fun removeExpiredTokens(email: String): Mono<Long> {
+    fun removeExpiredTokens(userId: String): Mono<Long> {
         val currentTime = Instant.now().epochSecond.toDouble()
         val range = Range.leftUnbounded(Range.Bound.inclusive(currentTime)) // Диапазон: (-∞, currentTime]
         return reactiveRedisTemplate.opsForZSet()
-            .removeRangeByScore("refresh:$email", range) // Удаляем токены с score <= currentTime
+            .removeRangeByScore("refresh:$userId", range) // Удаляем токены с score <= currentTime
     }
 
     // Удалить все токены для пользователя
-    fun removeAllTokens(email: String): Mono<Boolean> {
-        return reactiveRedisTemplate.delete("refresh:$email")
+    fun removeAllTokens(userId: String): Mono<Boolean> {
+        return reactiveRedisTemplate.delete("refresh:$userId")
             .map { deletedCount -> deletedCount > 0 }
     }
 
     @Scheduled(fixedRate = 300000) // 300000 мс = 5 минут
     fun cleanupExpiredTokens() {
-        val currentTime = Instant.now().epochSecond.toDouble()
         // Удаляем истекшие токены для всех ключей
         reactiveRedisTemplate.keys("*") // Получаем все ключи
             .flatMap { key ->

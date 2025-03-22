@@ -35,15 +35,15 @@ class AuthorizationControllerImpl(
     }
 
     @PostMapping("/signout")
-    override fun signout(@RequestHeader("X-Email") email: String, @RequestBody request: SignoutRequest): Mono<SignoutResponse> {
-        return securityService.signout(email, request)
+    override fun signout(@RequestHeader("X-UserId") userId: String, @RequestBody request: SignoutRequest): Mono<SignoutResponse> {
+        return securityService.signout(userId, request)
             .doOnNext { response -> println("Refresh response: $response") }
             .doOnError { error -> println("Refresh error: ${error.message}") }
     }
 
     @DeleteMapping("/invalidate_all")
-    override fun invalidateAllTokens(@RequestHeader("X-Email") email: String): Mono<InvalidateAllResponse> {
-        return securityService.invalidateAllTokens(email)
+    override fun invalidateAllTokens(@RequestHeader("X-UserId") userId: String): Mono<InvalidateAllResponse> {
+        return securityService.invalidateAllTokens(userId)
             .doOnNext { response -> println("Response: $response") }
             .doOnError { error -> println("Error: ${error.message}") }
     }
