@@ -16,7 +16,7 @@ class PasswordServiceImpl(
         return passwordRepository.findByEmail(email)
     }
 
-    override fun findById(id: Long): Mono<Password> {
+    override fun findById(id: UUID): Mono<Password> {
         return passwordRepository.findById(id)
     }
 
@@ -25,26 +25,7 @@ class PasswordServiceImpl(
     }
 
     override fun create(email: String, hashedPassword: String): Mono<Password> {
-        return generateUniqueId()
-            .flatMap { id ->
-                val newUser = Password(email, hashedPassword, id)
-                passwordRepository.save(newUser)
-            }
-    }
-
-    private fun generateUniqueId(): Mono<UUID> {
-        return Mono.defer {
-            val id = UUID.randomUUID()
-            passwordRepository.existsByUserId(id)
-                .flatMap { exists ->
-                    if (exists) {
-                        // Если ID уже существует, рекурсивно генерируем новый
-                        generateUniqueId()
-                    } else {
-                        // Если ID уникален, возвращаем его
-                        Mono.just(id)
-                    }
-                }
-        }
+        val newUser = Password(email, hashedPassword)
+        return passwordRepository.save(newUser)
     }
 }

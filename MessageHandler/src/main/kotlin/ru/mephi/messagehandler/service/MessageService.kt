@@ -35,10 +35,10 @@ class MessageService(
 
     @Transactional
     fun createMessage(message: MessageCreateDTO): Mono<Message> {
-        return messageRepository.save(Message(UUID.randomUUID(),message.senderId,message.chatId,message.text,Date()))
-//      return generateUniqueId().flatMap { id ->
-//          messageRepository.save(Message(id,message.senderId,message.chatId,message.text,Date()))
-//      }
+        return generateUniqueId()
+            .flatMap { id ->
+                messageRepository.save(Message(id ,message.senderId,message.chatId,message.text,Date()))
+            }
     }
 
     @Transactional

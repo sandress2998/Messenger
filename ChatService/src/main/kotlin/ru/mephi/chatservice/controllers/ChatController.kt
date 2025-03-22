@@ -18,11 +18,14 @@ class ChatController(
         return chatService.getChatByChatId(chatId)
     }
 
+    // Возможно, нужно изменить URL для удобности работы с gateway
+    // Нужно добавить пагинацию
     @GetMapping("/users/{userId}/chats")
     fun getChatsForUser(@PathVariable("userId") userId: UUID): Flux<Chat> {
         return chatService.getChatsByMemberId(userId)
     }
 
+    // Нужно добавить пагинацию
     @GetMapping("/chats/{chatId}/members")
     fun getMembersForChat(@PathVariable("chatId") chatId: UUID): Flux<ChatMember> {
         return chatService.getChatMembersByChatId(chatId)

@@ -28,7 +28,7 @@ class SecurityServiceImpl (
 
         return passwordService.findByEmail(email)
             .flatMap { user ->
-                val userId = user.userId.toString()
+                val userId = user.id.toString()
                 if (!encoder.matches(password, user.hashedPassword)) {
                     Mono.error(UnauthorizedException("Wrong password"))
                 } else {
@@ -56,7 +56,7 @@ class SecurityServiceImpl (
             .switchIfEmpty(
                 passwordService.create(email, encoder.encode(password))
                 .flatMap { user ->
-                    val userId = user.userId.toString()
+                    val userId = user.id.toString()
                     Mono.zip(
                         refreshService.generateToken(userId),
                         Mono.just(jwtService.generateToken(userId))
@@ -76,7 +76,7 @@ class SecurityServiceImpl (
 
         return passwordService.findByEmail(email)
             .flatMap { user ->
-                val userId = user.userId.toString()
+                val userId = user.id.toString()
                 refreshService.validateToken(userId, refreshToken)
                     .flatMap { isValid ->
                         if (!isValid) {

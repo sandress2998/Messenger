@@ -6,7 +6,6 @@ import reactor.core.publisher.Mono
 import ru.mephi.messagehandler.models.entity.Message
 import ru.mephi.messagehandler.models.dto.MessageCreateDTO
 import ru.mephi.messagehandler.models.dto.MessageUpdateDTO
-import ru.mephi.messagehandler.service.KafkaProducerService
 import ru.mephi.messagehandler.service.MessageService
 import java.util.*
 

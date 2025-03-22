@@ -12,9 +12,8 @@ class DatabaseInitializer(private val databaseClient: DatabaseClient) {
         databaseClient.sql(
             """
             CREATE TABLE IF NOT EXISTS passwords (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 email VARCHAR(255) NOT NULL UNIQUE,
-                user_id UUID NOT NULL UNIQUE,
                 hashed_password VARCHAR(255) NOT NULL
             );
             """

@@ -10,11 +10,9 @@ import java.util.*
 interface PasswordRepository: ReactiveCrudRepository<Password, Long> {
     fun findByEmail(email: String): Mono<Password>
 
-    fun findByUserId(userId: UUID): Mono<Password>
+    fun findById(userId: UUID): Mono<Password>
+
+    fun existsById(userId: UUID): Mono<Boolean>
 
     fun existsByEmail(email: String): Mono<Boolean>
-
-    fun existsByUserId(userId: UUID): Mono<Boolean>
-
-    //fun findUserById(id: Long): Mono<User>
 }

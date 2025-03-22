@@ -18,7 +18,7 @@ class KafkaProducerService(
             .withPayload(message)
             .setHeader(KafkaHeaders.TOPIC,"messages-incoming")
             .build()
-        kafkaTemplate.executeInTransaction(){
+        kafkaTemplate.executeInTransaction() {
             it.send(sendMessage)
         }
         println(sendMessage)

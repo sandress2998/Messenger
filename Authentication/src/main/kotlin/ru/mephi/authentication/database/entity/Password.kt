@@ -13,9 +13,6 @@ class Password(
     @Column(value = "hashed_password")
     var hashedPassword: String,
 
-    @Column
-    var userId: UUID,
-
     @Id
-    val id: Long? = null,
+    var id: UUID? = null
 )

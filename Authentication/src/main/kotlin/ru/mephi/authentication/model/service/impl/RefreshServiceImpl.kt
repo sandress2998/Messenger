@@ -24,7 +24,7 @@ class RefreshServiceImpl(
         val token = UUID.randomUUID().toString()
         val hashedToken = encoder.encode(token)
 
-        return passwordRepository.findByUserId(UUID.fromString(userId))
+        return passwordRepository.findById(UUID.fromString(userId))
             .switchIfEmpty(Mono.error(UnauthorizedException("UserId not found"))) // Если пользователь не найден
             .flatMap { user ->
                 refreshRepository.addToken(userId, hashedToken)

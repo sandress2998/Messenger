@@ -25,14 +25,14 @@ class ChatService(
 
     @Transactional
     fun updateChat(chat: Chat): Mono<Chat>{
-        //return chatRepository.save(chat)
-        if(chat.id == null){
+        if(chat.id == null) {
             return Mono.error(NotFoundException("Chat id not provided"))
         }
         return chatRepository.getChatById(id = chat.id)
             .switchIfEmpty {
                 Mono.error(NotFoundException("Chat ${chat.id} not found"))
             }
+            .then(chatRepository.save(chat))
     }
 
     @Transactional
@@ -77,6 +77,7 @@ class ChatService(
             .switchIfEmpty {
                 Mono.error(NotFoundException("ChatMember not found"))
             }
+            .then(chatMembersRepository.save(chatMember))
     }
 
     @Transactional
