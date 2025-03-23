@@ -12,12 +12,15 @@ import ru.mephi.authentication.model.service.JwtService
 import ru.mephi.authentication.model.service.RefreshService
 import ru.mephi.authentication.model.service.SecurityService
 import ru.mephi.authentication.model.service.PasswordService
+import ru.mephi.authentication.webclient.UserService
+import ru.mephi.authentication.webclient.dto.CreateUserDTO
 
 @Service
 class SecurityServiceImpl (
     private val jwtService: JwtService,
     private val passwordService: PasswordService,
-    private val refreshService: RefreshService
+    private val refreshService: RefreshService,
+    private val userServiceWebClient: UserService
 ): SecurityService {
     val encoder = BCryptPasswordEncoder()
     private val log: Logger = LoggerFactory.getLogger(SecurityServiceImpl::class.java)
@@ -43,6 +46,7 @@ class SecurityServiceImpl (
     }
 
     override fun signup(request: SignupRequest): Mono<SignupResponse> {
+        val username = request.username
         val email = request.email
         val password = request.password
 
@@ -56,11 +60,19 @@ class SecurityServiceImpl (
             .switchIfEmpty(
                 passwordService.create(email, encoder.encode(password))
                 .flatMap { user ->
-                    val userId = user.id.toString()
-                    Mono.zip(
-                        refreshService.generateToken(userId),
-                        Mono.just(jwtService.generateToken(userId))
+                    userServiceWebClient.createUser(CreateUserDTO(user.id!!, username, email))
+                    .then (Mono.defer {
+                        println("User was successfully created")
+                        val userId = user.id.toString()
+                        Mono.zip(
+                            refreshService.generateToken(userId),
+                            Mono.just(jwtService.generateToken(userId)),
                         )
+                    })
+                    .onErrorResume { error ->
+                        println("User wasn't created. An error has happened: ${error.message}")
+                        Mono.error(UnauthorizedException(error.message ?: "Unknown error"))
+                    }
                 }
                 .flatMap { tuple ->
                     val refreshToken = tuple.t1

@@ -14,7 +14,7 @@ class UserController(
     private val userService: UserService,
 ) {
     @PostMapping("/users")
-    fun addUser(@RequestBody user: CreateUserDTO) : Mono<User> {
+    fun addUser(@RequestBody user: CreateUserDTO): Mono<User> {
         return userService.createUser(user)
     }
 
@@ -22,12 +22,12 @@ class UserController(
     fun updateUser(
         @RequestBody user: UpdateUserHttpDTO,
         @PathVariable userId: UUID
-    ) : Mono<User> {
-        return userService.updateUser(UpdateUserDTO(userId,user.username,user.email))
+    ): Mono<User> {
+        return userService.updateUser(UpdateUserDTO(userId, user.username, user.email))
     }
 
     @GetMapping("/users/{userId}")
-    fun getUserById(@PathVariable userId: UUID) : Mono<User> {
+    fun getUserById(@PathVariable userId: UUID): Mono<User> {
         return userService.getUser(userId)
     }
 }

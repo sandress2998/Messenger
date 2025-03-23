@@ -7,11 +7,10 @@ import ru.mephi.authentication.dto.request.*
 import ru.mephi.authentication.dto.response.*
 import ru.mephi.authentication.model.service.SecurityService
 
-
 @RestController
 @RequestMapping("/auth")
 class AuthorizationControllerImpl(
-    private val securityService: SecurityService
+    private val securityService: SecurityService,
 ): AuthorizationController {
     @PostMapping("/signin")
     override fun signin(@RequestBody request: SigninRequest): Mono<SigninResponse> {

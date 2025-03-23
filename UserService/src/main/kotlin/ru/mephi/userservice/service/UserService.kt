@@ -18,7 +18,12 @@ class UserService(
 ){
     @Transactional
     fun createUser(user : CreateUserDTO): Mono<User>{
-        return userRepository.save(User(username = user.username , email = user.email))
+        val userId = user.id
+        val username = user.username
+        val email = user.email
+
+        return userRepository.upsert(userId, username, email)
+            .thenReturn(User(id = userId, username = username , email = email))
     }
 
     @Transactional
