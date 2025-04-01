@@ -6,6 +6,7 @@ import ru.mephi.authentication.controller.AuthorizationController
 import ru.mephi.authentication.dto.request.*
 import ru.mephi.authentication.dto.response.*
 import ru.mephi.authentication.model.service.SecurityService
+import java.util.*
 
 @RestController
 @RequestMapping("/auth")
@@ -45,5 +46,10 @@ class AuthorizationControllerImpl(
         return securityService.invalidateAllTokens(userId)
             .doOnNext { response -> println("Response: $response") }
             .doOnError { error -> println("Error: ${error.message}") }
+    }
+
+    @DeleteMapping("/delete")
+    override fun deleteUser(@RequestHeader("X-UserId") userId: UUID): Mono<Void> {
+        return securityService.deleteUser(userId)
     }
 }

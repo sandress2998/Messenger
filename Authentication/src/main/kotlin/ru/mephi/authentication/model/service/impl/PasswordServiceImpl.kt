@@ -28,4 +28,13 @@ class PasswordServiceImpl(
         val newUser = Password(email, hashedPassword)
         return passwordRepository.save(newUser)
     }
+
+    override fun removeByEmail(email: String): Mono<Void> {
+        return passwordRepository.removeByEmail(email)
+            .then(Mono.empty())
+    }
+
+    override fun removeById(userId: UUID): Mono<Void> {
+        return passwordRepository.removeById(userId)
+    }
 }

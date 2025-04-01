@@ -3,79 +3,105 @@ package ru.mephi.chatservice.controllers
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.entity.ChatMember
+import ru.mephi.chatservice.models.dto.MemberCreationRequest
+import ru.mephi.chatservice.models.dto.MemberFromUserCreationRequest
+import ru.mephi.chatservice.models.dto.RequestResult
 import ru.mephi.chatservice.models.entity.Chat
-import ru.mephi.chatservice.models.dto.MemberInfoDTO
+import ru.mephi.chatservice.models.entity.ChatMember
+import ru.mephi.chatservice.service.ChatService
 import java.util.*
 
 
 @RestController
+@RequestMapping("/chats")
 class ChatController(
-    private val chatService: ru.mephi.chatservice.service.ChatService
+    private val chatService: ChatService
 ) {
-    @GetMapping("/chats/{chatId}")
-    fun getChat(@PathVariable("chatId") chatId: UUID): Mono<Chat> {
-        return chatService.getChatByChatId(chatId)
-    }
-
     // Возможно, нужно изменить URL для удобности работы с gateway
     // Нужно добавить пагинацию
-    @GetMapping("/users/{userId}/chats")
-    fun getChatsForUser(@PathVariable("userId") userId: UUID): Flux<Chat> {
-        return chatService.getChatsByMemberId(userId)
+    @GetMapping
+    fun getChatsForUser(@RequestHeader("X-UserId") userId: UUID): Flux<RequestResult> {
+        return chatService.getChatsInfoByUserId(userId)
+    }
+
+    // Добавить механизм присвоения тому, кто создал чат, роли админа (создателя)
+    @PostMapping
+    fun createChat(
+        @RequestHeader("X-UserId") userId: UUID,
+        @RequestBody chat: Chat
+    ): Mono<RequestResult> {
+        return chatService.createChat(chat, userId)
+    }
+
+    @PutMapping("/{chatId}")
+    fun updateChat(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @RequestBody chat: Chat
+    ): Mono<RequestResult> {
+        return chatService.updateChat(chat.copy(id = chatId), chatId, userId)
+    }
+
+    @DeleteMapping("/{chatId}")
+    fun deleteChat (
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable("chatId") chatId: UUID
+    ): Mono<RequestResult> {
+        return chatService.deleteChat(chatId, userId)
     }
 
     // Нужно добавить пагинацию
-    @GetMapping("/chats/{chatId}/members")
-    fun getMembersForChat(@PathVariable("chatId") chatId: UUID): Flux<ChatMember> {
-        return chatService.getChatMembersByChatId(chatId)
+    @GetMapping("/{chatId}/members")
+    fun getMembersForChat(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable("chatId") chatId: UUID
+    ): Flux<RequestResult> {
+        return chatService.getChatMembersByChatId(chatId, userId)
     }
 
-    @PostMapping("/chats")
-    fun createChat(@RequestBody chat: Chat): Mono<Chat> {
-        return chatService.createChat(chat)
-    }
-
-    @PatchMapping("/chats/{chatId}")
-    fun updateChat(@PathVariable("chatId") chatId: UUID, @RequestBody chat: Chat): Mono<ru.mephi.chatservice.models.entity.Chat> {
-        return chatService.updateChat(chat.copy(id = chatId))
-    }
-
-    @DeleteMapping("/chats/{chatId}")
-    fun deleteChat(@PathVariable("chatId") chatId: UUID): Mono<Void> {
-        return chatService.deleteChat(chatId)
-    }
-
-    @PostMapping("/chats/{chatId}/members")
-    fun addMemberToChat(
+    @PostMapping("/{chatId}/members")
+    fun addUserToChat(
+        @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
         @PathVariable("chatId") chatId: UUID,
-        @RequestBody memberInfoDTO: MemberInfoDTO
-    ): Mono<ChatMember> {
-        return chatService.addChatMemberToChat(
-            ChatMember(
-                chatId = chatId,
-                userId = memberInfoDTO.userId,
-                role = memberInfoDTO.role
-            ),
+        @RequestBody memberCreationRequest: MemberCreationRequest
+    ): Mono<RequestResult> {
+        return chatService.addMemberToChat(
+            memberCreationRequest, chatId, userInitiatorId
         )
     }
 
-    @PatchMapping("/chats/{chatId}/members/{userId}")
+    @PutMapping("/{chatId}/members/{memberId}")
     fun updateMemberToChat(
+        @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет изменить информацию о человеке в чате
         @PathVariable("chatId") chatId: UUID,
-        @PathVariable("userId") userId: UUID,
-        @RequestBody memberInfoDTO: MemberInfoDTO
-    ): Mono<ChatMember> {
+        @PathVariable("memberId") memberId: UUID,
+        @RequestBody chatMember: ChatMember
+    ): Mono<RequestResult> {
         return chatService.updateChatMemberToChat(
-            ChatMember(chatId = chatId, userId = userId, role = memberInfoDTO.role),
+            chatMember.copy(id = memberId, chatId = chatId), userInitiatorId
         )
     }
 
-    @DeleteMapping("/chats/{chatId}/members/{userId}")
+    @DeleteMapping("/{chatId}/members/{memberId}")
     fun removeMemberFromChat(
+        @RequestHeader("X-UserId") userInitiatorId: UUID,
         @PathVariable("chatId") chatId: UUID,
-        @PathVariable("userId") userId: UUID
-    ): Mono<Void> {
-        return chatService.deleteChatMemberFromChat(chatId, userId)
+        @PathVariable("memberId") memberToDeleteId: UUID
+    ): Mono<RequestResult> {
+        return chatService.deleteMemberFromChat(chatId, memberToDeleteId, userInitiatorId)
     }
+
+    // изменить на добавление по какому-то тэгу (или лейблу, как это называется...)
+    @PostMapping("/{chatId}/users")
+    fun addUserByEmail(
+        @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
+        @PathVariable("chatId") chatId: UUID,
+        @RequestBody creationRequest: MemberFromUserCreationRequest
+    ): Mono<RequestResult> {
+        return chatService.addUserToChat(
+            creationRequest, chatId, userInitiatorId
+        )
+    }
+
+    // здесь кончаются запросы, которые протестированы
 }

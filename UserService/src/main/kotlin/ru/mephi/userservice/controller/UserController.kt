@@ -3,8 +3,8 @@ package ru.mephi.userservice.controller
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import ru.mephi.userservice.model.dto.CreateUserDTO
+import ru.mephi.userservice.model.dto.GetUserDTO
 import ru.mephi.userservice.model.dto.UpdateUserDTO
-import ru.mephi.userservice.model.dto.UpdateUserHttpDTO
 import ru.mephi.userservice.model.entity.User
 import ru.mephi.userservice.service.UserService
 import java.util.*
@@ -18,17 +18,22 @@ class UserController(
         return userService.createUser(user)
     }
 
-    @PatchMapping("/users/{userId}")
+    @PatchMapping("/users")
     fun updateUser(
-        @RequestBody user: UpdateUserHttpDTO,
-        @PathVariable userId: UUID
+        @RequestBody request: UpdateUserDTO,
+        @RequestHeader("X-UserId") userId: UUID
     ): Mono<User> {
-        return userService.updateUser(UpdateUserDTO(userId, user.username, user.email))
+        return userService.updateUser(userId, request)
     }
 
     @GetMapping("/users/{userId}")
-    fun getUserById(@PathVariable userId: UUID): Mono<User> {
+    fun getUserById(@PathVariable userId: UUID): Mono<GetUserDTO> {
         return userService.getUser(userId)
+    }
+
+    @DeleteMapping("/users")
+    fun deleteUserById(@RequestHeader("X-UserId") userId: UUID): Mono<Void> {
+        return userService.deleteUser(userId)
     }
 }
 

@@ -6,7 +6,7 @@ import java.util.*
 
 @Table(name = "chats")
 data class Chat(
+    val name: String = "",
     @Id
     val id: UUID? = null,
-    val name: String = "",
 )

@@ -1,4 +1,4 @@
-package ru.mephi.authentication.database.config
+package ru.mephi.authentication.database.init
 
 import jakarta.annotation.PostConstruct
 import org.springframework.r2dbc.core.DatabaseClient

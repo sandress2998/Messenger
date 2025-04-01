@@ -9,14 +9,14 @@ import java.util.*
 
 @Table(name = "chats_members")
 data class ChatMember(
-    @Id
-    val id: UUID? = null,
-
     @Column(value = "chat_id")
-    val chatId: UUID,
+    val chatId: UUID?,
 
     @Column(value = "user_id")
-    val userId: UUID,
+    val userId: UUID?,
 
-    val role: ChatRole = ChatRole.MEMBER
+    val role: ChatRole = ChatRole.MEMBER,
+
+    @Id
+    val id: UUID? = null
 )

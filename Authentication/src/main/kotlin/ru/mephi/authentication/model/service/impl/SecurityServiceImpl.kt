@@ -14,6 +14,7 @@ import ru.mephi.authentication.model.service.SecurityService
 import ru.mephi.authentication.model.service.PasswordService
 import ru.mephi.authentication.webclient.UserService
 import ru.mephi.authentication.webclient.dto.CreateUserDTO
+import java.util.*
 
 @Service
 class SecurityServiceImpl (
@@ -70,9 +71,14 @@ class SecurityServiceImpl (
                         )
                     })
                     .onErrorResume { error ->
-                        println("User wasn't created. An error has happened: ${error.message}")
-                        Mono.error(UnauthorizedException(error.message ?: "Unknown error"))
+                        println("Error in UserService while user were creating...")
+                        passwordService.removeByEmail(email)
+                            .then(Mono.error(UnauthorizedException(error.message ?: "Unknown error")))
                     }
+                }
+                .onErrorResume { error ->
+                    println("User wasn't created. An error has happened: ${error.message}")
+                    Mono.error(UnauthorizedException(error.message ?: "Unknown error"))
                 }
                 .flatMap { tuple ->
                     val refreshToken = tuple.t1
@@ -98,7 +104,7 @@ class SecurityServiceImpl (
                         }
                     }
                     .flatMap { updatedRefreshToken ->
-                        val jwtToken = jwtService.generateToken(email)
+                        val jwtToken = jwtService.generateToken(userId)
                         Mono.just(RefreshResponse(updatedRefreshToken, jwtToken))
                     }
             }
@@ -127,5 +133,9 @@ class SecurityServiceImpl (
                 InvalidateAllResponse("No tokens were deleted")
             }
         }
+    }
+
+    override fun deleteUser(userId: UUID): Mono<Void> {
+        return passwordService.removeById(userId)
     }
 }

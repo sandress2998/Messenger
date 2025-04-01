@@ -20,5 +20,19 @@ class ChatMembersDatabaseInitializer(private val databaseClient: DatabaseClient)
             )
             """
         ).fetch().rowsUpdated().subscribe()
+
+        // Создание индекса для chat_id
+        databaseClient.sql(
+            """
+                CREATE INDEX IF NOT EXISTS idx_chat_id ON chats_members (chat_id)
+            """
+        ).fetch().rowsUpdated().subscribe()
+
+        // Создание индекса для user_id
+        databaseClient.sql(
+            """
+                CREATE INDEX IF NOT EXISTS idx_user_id ON chats_members (user_id)
+            """
+        ).fetch().rowsUpdated().subscribe()
     }
 }

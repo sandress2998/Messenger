@@ -15,4 +15,8 @@ interface PasswordRepository: ReactiveCrudRepository<Password, Long> {
     fun existsById(userId: UUID): Mono<Boolean>
 
     fun existsByEmail(email: String): Mono<Boolean>
+
+    fun removeByEmail(email: String): Mono<Boolean>
+
+    fun removeById(id: UUID): Mono<Void>
 }

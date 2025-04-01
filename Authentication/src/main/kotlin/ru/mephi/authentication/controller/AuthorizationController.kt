@@ -3,6 +3,7 @@ package ru.mephi.authentication.controller
 import reactor.core.publisher.Mono
 import ru.mephi.authentication.dto.request.*
 import ru.mephi.authentication.dto.response.*
+import java.util.*
 
 
 interface AuthorizationController {
@@ -15,4 +16,6 @@ interface AuthorizationController {
     fun signout(userId: String, request: SignoutRequest): Mono<SignoutResponse>
 
     fun invalidateAllTokens(userId: String): Mono<InvalidateAllResponse>
+
+    fun deleteUser(userId: UUID): Mono<Void>
 }

@@ -13,4 +13,8 @@ interface PasswordService {
     fun findAll(): Flux<Password>
 
     fun create(email: String, hashedPassword: String): Mono<Password>
+
+    fun removeByEmail(email: String): Mono<Void>
+
+    fun removeById(userId: UUID): Mono<Void>
 }
