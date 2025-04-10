@@ -4,8 +4,8 @@ import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
 import org.springframework.stereotype.Service
-import ru.mephi.messagehandler.models.dto.MessageCreateDTO
-import ru.mephi.messagehandler.models.dto.MessageUpdateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
 import java.util.*
 
 

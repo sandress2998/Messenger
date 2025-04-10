@@ -2,12 +2,13 @@ package ru.mephi.messagehandler.controller
 
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
-import ru.mephi.messagehandler.models.dto.MessageCreateDTO
-import ru.mephi.messagehandler.models.dto.MessageUpdateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
 import ru.mephi.messagehandler.service.KafkaProducerService
-import ru.mephi.messagehandler.service.MessageService
 import java.util.*
 
+
+/*
 @RestController
 @RequestMapping("/test")
 class TestMessageController (
@@ -38,3 +39,4 @@ class TestMessageController (
         return Mono.empty()
     }
 }
+*/

@@ -37,4 +37,7 @@ interface ChatMembersRepository: ReactiveCrudRepository<ChatMember, UUID> {
         WHERE id = :memberId;
     """)
     fun update(memberId: UUID, role: ChatRole): Mono<Long>
+
+    @Query("SELECT chat_id FROM chats_members WHERE user_id = :userId")
+    fun getChatsIdByUserId(userId: UUID): Flux<UUID>
 }

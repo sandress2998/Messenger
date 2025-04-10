@@ -3,9 +3,7 @@ package ru.mephi.chatservice.controllers
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.dto.MemberCreationRequest
-import ru.mephi.chatservice.models.dto.MemberFromUserCreationRequest
-import ru.mephi.chatservice.models.dto.RequestResult
+import ru.mephi.chatservice.models.dto.*
 import ru.mephi.chatservice.models.entity.Chat
 import ru.mephi.chatservice.models.entity.ChatMember
 import ru.mephi.chatservice.service.ChatService
@@ -20,7 +18,7 @@ class ChatController(
     // Возможно, нужно изменить URL для удобности работы с gateway
     // Нужно добавить пагинацию
     @GetMapping
-    fun getChatsForUser(@RequestHeader("X-UserId") userId: UUID): Flux<RequestResult> {
+    fun getChatsForUser(@RequestHeader("X-UserId") userId: UUID): Flux<ChatInfoResponse> {
         return chatService.getChatsInfoByUserId(userId)
     }
 
@@ -55,7 +53,7 @@ class ChatController(
     fun getMembersForChat(
         @RequestHeader("X-UserId") userId: UUID,
         @PathVariable("chatId") chatId: UUID
-    ): Flux<RequestResult> {
+    ): Flux<MemberInfoResponse> {
         return chatService.getChatMembersByChatId(chatId, userId)
     }
 
@@ -64,7 +62,7 @@ class ChatController(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
         @PathVariable("chatId") chatId: UUID,
         @RequestBody memberCreationRequest: MemberCreationRequest
-    ): Mono<RequestResult> {
+    ): Mono<MemberInfoResponse> {
         return chatService.addMemberToChat(
             memberCreationRequest, chatId, userInitiatorId
         )
@@ -97,11 +95,24 @@ class ChatController(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
         @PathVariable("chatId") chatId: UUID,
         @RequestBody creationRequest: MemberFromUserCreationRequest
-    ): Mono<RequestResult> {
-        return chatService.addUserToChat(
+    ): Mono<MemberInfoResponse> {
+        return chatService.addUserToChat (
             creationRequest, chatId, userInitiatorId
         )
     }
 
     // здесь кончаются запросы, которые протестированы
+    @GetMapping("/{chatId}/users")
+    fun getUserInChat(
+        @RequestHeader("X-UserId") userId: UUID, // userId того, кто хочет добавить другого человека в чат
+        @PathVariable("chatId") chatId: UUID
+    ): Mono<UserRoleInChat> {
+        return chatService.getUserRoleInChat(chatId, userId)
+    }
+
+    @GetMapping("/id")
+    fun getChatsId(@RequestHeader("X-UserId") userId: UUID): Flux<ChatId> {
+        return chatService.getChatsId(userId)
+    }
+
 }

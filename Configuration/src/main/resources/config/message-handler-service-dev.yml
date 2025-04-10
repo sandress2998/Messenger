@@ -10,7 +10,7 @@ spring:
     name: message-handler-service
   data:
     mongodb:
-      uri: mongodb://mongodb:27017/messages
+      uri: mongodb://username:password@mongodb:27017/messages?authSource=admin
   kafka:
     bootstrap-servers: kafka:9092
     producer:
@@ -36,3 +36,8 @@ logging:
   level:
     web: debug
     kafka: debug
+
+my:
+  messages:
+    pagination-quantity: 5
+

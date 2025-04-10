@@ -6,11 +6,10 @@ import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ru.mephi.messagehandler.models.dto.MessageCreateDTO
-import ru.mephi.messagehandler.models.dto.MessageDeleteDTO
-import ru.mephi.messagehandler.models.dto.MessageUpdateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
 import java.util.*
-
+/*
 @Service
 @KafkaListener(topics = ["messages-incoming"], groupId = "message-handlers")
 class KafkaConsumerService(private val messageService: MessageService) {
@@ -51,3 +50,4 @@ class KafkaConsumerService(private val messageService: MessageService) {
             )
     }
 }
+ */

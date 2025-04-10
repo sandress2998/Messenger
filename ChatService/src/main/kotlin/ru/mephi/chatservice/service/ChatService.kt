@@ -82,7 +82,7 @@ class ChatService(
             }
     }
 
-    fun getChatsInfoByUserId(userId: UUID): Flux<RequestResult> {
+    fun getChatsInfoByUserId(userId: UUID): Flux<ChatInfoResponse> {
         return chatMembersRepository.getChatMembersByUserId(userId)
             .flatMap { chatMember ->
                 getChatInfoByChatId(chatMember.chatId!!, userId)
@@ -96,7 +96,7 @@ class ChatService(
     }
 
     // Сделать пагинацию
-    fun getChatMembersByChatId(chatId: UUID, userInitiatorId: UUID): Flux<RequestResult> {
+    fun getChatMembersByChatId(chatId: UUID, userInitiatorId: UUID): Flux<MemberInfoResponse> {
         return isUserMemberInChat(chatId, userInitiatorId)
             .flatMapMany { isMember: Boolean ->  // Используем flatMapMany вместо flatMap, т.к. нужно вернуть Flux
                 if (!isMember) {
@@ -108,10 +108,10 @@ class ChatService(
                                 // пропускаем тех пользователей, которых не нашли?
                                 //.filter { username -> username != null}
                                 .map { username: String? ->
-                                    MemberInfoResponse(chatMember.id!!, username!!, chatMember.role) as RequestResult
+                                    MemberInfoResponse(chatMember.id!!, username!!, chatMember.role)
                                 }
                                 .switchIfEmpty(
-                                    Mono.just(MemberInfoResponse(chatMember.id!!, "DELETED_ACCOUNT", chatMember.role) as RequestResult)
+                                    Mono.just(MemberInfoResponse(chatMember.id!!, "DELETED_ACCOUNT", chatMember.role))
                                 )
                         }
                         .onErrorResume { error ->
@@ -126,7 +126,7 @@ class ChatService(
 
     //Операции только с участниками чатов
     @Transactional
-    fun addMemberToChat(memberInfo: MemberCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<RequestResult> {
+    fun addMemberToChat(memberInfo: MemberCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<MemberInfoResponse> {
         val someMemberId = memberInfo.someMemberId
         val newRole = memberInfo.role
         return isUserAdminInChat(chatId, userInitiatorId)
@@ -142,7 +142,13 @@ class ChatService(
                 val userId = oldChatMember.userId
                 chatMembersRepository.save(ChatMember(chatId, userId, newRole))
             }
-            .thenReturn(SuccessResult() as RequestResult)
+            .flatMap { member ->
+                userRepository.getUsernameById(member.id!!)
+                    .map { username ->
+                        MemberInfoResponse(member.id, username!!, member.role)
+                    }
+                    .switchIfEmpty(Mono.error(NotFoundException("User not found")))
+            }
             .onErrorResume { error ->
                 when (error) {
                     is FailureResult -> Mono.error(error)
@@ -186,7 +192,7 @@ class ChatService(
     }
 
     @Transactional
-    fun addUserToChat(request: MemberFromUserCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<RequestResult> {
+    fun addUserToChat(request: MemberFromUserCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<MemberInfoResponse> {
         val email = request.email
         val role = request.role
         return isUserAdminInChat(chatId, userInitiatorId)
@@ -203,7 +209,7 @@ class ChatService(
                 val username = pair.second!!
                 chatMembersRepository.save(ChatMember(chatId, userId, role))
                     .map { savedChatMember ->
-                        MemberInfoResponse(savedChatMember.id!!, username, savedChatMember.role) as RequestResult
+                        MemberInfoResponse(savedChatMember.id!!, username, savedChatMember.role)
                     }
             }
             .switchIfEmpty(Mono.error(NotFoundException("User not found")))
@@ -238,6 +244,24 @@ class ChatService(
             }
     }
 
+    fun getUserRoleInChat(chatId: UUID, userId: UUID): Mono<UserRoleInChat> {
+        return chatMembersRepository.getChatMemberByChatIdAndUserId(chatId, userId)
+            .map { member -> UserRoleInChat(member.role) }
+            .switchIfEmpty( Mono.just(UserRoleInChat(ChatRole.NOT_MEMBER)) )
+            .onErrorResume { error ->
+                when (error) {
+                    is FailureResult -> Mono.error(error)
+                    else -> Mono.error(RuntimeException(error.message ?: "Unknown error"))
+                }
+            }
+    }
+
+    fun getChatsId(userId: UUID): Flux<ChatId> {
+        return chatMembersRepository.getChatsIdByUserId(userId)
+            .flatMap { chatId -> Mono.just(ChatId(chatId)) }
+            .onErrorResume { error -> Mono.error(RuntimeException(error.message ?: "Unknown error")) }
+    }
+
     private fun deleteChatMemberByAnotherMemberFromChat(memberToDelete: ChatMember, userInitiatorId: UUID): Mono<RequestResult> {
         val chatId = memberToDelete.chatId!!
         val memberToDeleteId = memberToDelete.id!!
@@ -260,7 +284,7 @@ class ChatService(
             .thenReturn(SuccessResult() as RequestResult)
     }
 
-    private fun getChatInfoByChatId(chatId: UUID, userId: UUID): Mono<RequestResult>{
+    private fun getChatInfoByChatId(chatId: UUID, userId: UUID): Mono<ChatInfoResponse> {
         val chat = chatRepository.findById(chatId)
         val chatMembersQuantity = chatMembersRepository.countByChatId(chatId)
         val chatMember = chatMembersRepository.getChatMemberByChatIdAndUserId(chatId, userId)
@@ -269,7 +293,7 @@ class ChatService(
                 val fetchedChat = tuple.t1
                 val memberQuantity = tuple.t2.toInt()
                 val fetchedChatMember = tuple.t3
-                ChatInfoResponse(fetchedChat.id!!, fetchedChatMember.id!!, fetchedChat.name, memberQuantity) as RequestResult
+                ChatInfoResponse(fetchedChat.id!!, fetchedChatMember.id!!, fetchedChat.name, memberQuantity) //as RequestResult
             }
     }
 

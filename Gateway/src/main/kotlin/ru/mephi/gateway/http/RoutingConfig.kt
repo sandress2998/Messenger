@@ -35,6 +35,36 @@ class RoutingConfiguration {
                     .method(HttpMethod.GET, HttpMethod.PATCH, HttpMethod.POST, HttpMethod.DELETE)
                     .uri("lb://user-service:8083") // Перенаправляем на user-service
             }
+            .route("create_message_route") { r ->
+                r.path("/chats/{chatId}/messages")
+                    .and()
+                    .method(HttpMethod.POST)
+                    .uri("lb://message-handler-service:8091")
+            }
+            .route("delete_all_messages") { r ->
+                r.path("/chats/{chatId}/messages")
+                    .and()
+                    .method(HttpMethod.DELETE)
+                    .uri("lb://message-handler-service:8091")
+            }
+            .route("concrete_message_route") { r ->
+                r.path("/chats/{chatId}/messages/{messageId}")
+                    .and()
+                    .method(HttpMethod.GET, HttpMethod.PATCH, HttpMethod.DELETE)
+                    .uri("lb://message-handler-service:8091")
+            }
+            .route("update_status_route") { r ->
+                r.path("/chats/{chatId}/messages/{messageId}/status/{status}")
+                    .and()
+                    .method(HttpMethod.PATCH)
+                    .uri("lb://message-handler-service:8091")
+            }
+            .route("generic_messages_route") { r ->
+                r.path("/messages")
+                    .and()
+                    .method(HttpMethod.GET, HttpMethod.POST)
+                    .uri("lb://message-handler-service:8091")
+            }
             .build()
     }
 }

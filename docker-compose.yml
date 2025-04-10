@@ -183,6 +183,8 @@ services:
       MONGO_INITDB_DATABASE: messenger
       MONGO_INITDB_ROOT_USERNAME: username
       MONGO_INITDB_ROOT_PASSWORD: password
+    networks:
+      - messenger-network
     volumes:
       - mongodb_data:/data/db
 

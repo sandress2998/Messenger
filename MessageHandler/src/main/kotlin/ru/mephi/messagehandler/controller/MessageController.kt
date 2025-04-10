@@ -4,11 +4,87 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.messagehandler.models.entity.Message
-import ru.mephi.messagehandler.models.dto.MessageCreateDTO
-import ru.mephi.messagehandler.models.dto.MessageUpdateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
+import ru.mephi.messagehandler.models.dto.request.MessageSearchDTO
+import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
+import ru.mephi.messagehandler.models.dto.response.RequestResult
+import ru.mephi.messagehandler.models.entity.MessageStatus
 import ru.mephi.messagehandler.service.MessageService
 import java.util.*
 
+@RestController
+class MessageController(
+    private val messageService: MessageService
+) {
+    @GetMapping("/chats/{chatId}/messages/{startMessageId}")
+    fun getMessages(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @PathVariable startMessageId: UUID
+    ): Flux<Message> {
+        return messageService.getMessages(userId, chatId, startMessageId)
+    }
+
+    // изменение сообщения, удаление сообщения - это не через REST API
+    // НО! для тестирования пусть будет пока REST API
+    @PatchMapping("/chats/{chatId}/messages/{messageId}")
+    fun updateMessage(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @PathVariable messageId: UUID,
+        @RequestBody updatedMessage: MessageUpdateDTO
+    ): Mono<RequestResult> {
+        return messageService.updateMessage(userId, chatId, messageId, updatedMessage)
+    }
+
+    // Для тестирования пусть будет пока REST API
+    @DeleteMapping("/chats/{chatId}/messages/{messageId}")
+    fun deleteMessage(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @PathVariable messageId: UUID
+    ): Mono<RequestResult> {
+        return messageService.deleteMessage(userId, chatId, messageId)
+    }
+
+    @PostMapping("/chats/{chatId}/messages")
+    fun createMessage(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @RequestBody newMessage: MessageCreateDTO
+    ): Mono<RequestResult> {
+        return messageService.createMessage(userId, chatId, newMessage)
+    }
+
+    @PostMapping("/messages")
+    fun searchMessage(
+        @RequestHeader("X-UserId") userId: UUID,
+        @RequestBody messageSearchDTO: MessageSearchDTO
+    ): Flux<Message> {
+        return messageService.searchMessages(userId, messageSearchDTO)
+    }
+
+    @DeleteMapping("/chats/{chatId}/messages")
+    fun deleteAllMessages(
+        //@RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID
+    ): Mono<RequestResult> {
+        return messageService.deleteAllMessages(chatId)
+    }
+
+    @PatchMapping("/chats/{chatId}/messages/{messageId}/status/{status}")
+    fun updateMessageStatus(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @PathVariable messageId: UUID,
+        @PathVariable status: MessageStatus
+    ): Mono<RequestResult> {
+        return messageService.markAsViewed(userId, chatId, messageId)
+    }
+}
+
+
+/*
 
 @RestController
 class MessageController (
@@ -57,4 +133,4 @@ class MessageController (
         return messageService.deleteMessageById(messageId)
     }
 }
-
+*/
