@@ -13,6 +13,7 @@ class ChatId (
     val chatId: UUID
 ): SuccessResult()
 
+// если это не нужно, то лучше убрать
 class ChatIdDeserializer : JsonDeserializer<ChatId>() {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ChatId {
         return when (p.currentToken) {

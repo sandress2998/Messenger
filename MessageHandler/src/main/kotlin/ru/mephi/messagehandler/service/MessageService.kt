@@ -1,6 +1,5 @@
 package ru.mephi.messagehandler.service
 
-import jdk.incubator.vector.VectorOperators.Binary
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
@@ -18,17 +17,19 @@ import ru.mephi.messagehandler.models.dto.request.MessageSearchDTO
 import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
 import ru.mephi.messagehandler.models.dto.response.RequestResult
 import ru.mephi.messagehandler.models.dto.response.SuccessResult
+import ru.mephi.messagehandler.models.dto.response.UnreadChanges
 import ru.mephi.messagehandler.models.entity.Message
 import ru.mephi.messagehandler.models.entity.MessageStatus
-import ru.mephi.messagehandler.repository.MessageRepository
-import ru.mephi.messagehandler.webclient.ChatService
 import ru.mephi.messagehandler.models.exception.AccessDeniedException
 import ru.mephi.messagehandler.models.exception.FailureResult
 import ru.mephi.messagehandler.models.exception.NotFoundException
+import ru.mephi.messagehandler.repository.MessageRepository
 import ru.mephi.messagehandler.util.UUIDUtil
+import ru.mephi.messagehandler.webclient.ChatService
 import ru.mephi.messagehandler.webclient.dto.UserDataInChat
 import java.time.Instant
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 @Service
@@ -36,9 +37,10 @@ class MessageService (
     private val mongoTemplate: ReactiveMongoTemplate,
     private val messageRepository: MessageRepository,
     private val chatService: ChatService,
-    private val properties: MessageProperties
+    private val properties: MessageProperties,
+    private val messageReadReceiptService: MessageReadReceiptService
 ) {
-    fun getMessages (
+    fun getMessagesBefore (
         userId: UUID,
         chatId: UUID,
         startMessageId: UUID
@@ -60,35 +62,36 @@ class MessageService (
             }
     }
 
-    @Transactional
+    // В MongoDB, как я поняла, делать транзакции себе дороже
     fun updateMessage (
         userId: UUID,
         chatId: UUID,
         messageId: UUID,
         updatedMessage: MessageUpdateDTO
     ): Mono<RequestResult> {
-        val binMessageId = UUIDUtil.toBinary(messageId)
-        val query = Query(Criteria.where("_id").`is`(binMessageId))
+        //val binMessageId = UUIDUtil.toBinary(messageId)
+        val query = Query(Criteria.where("_id").`is`(messageId))
         val update = Update().set("text", updatedMessage.text)
 
         return checkIfUserMember(userId, chatId)
             .then(mongoTemplate.findAndModify(query, update, Message::class.java))
             .switchIfEmpty(Mono.error(NotFoundException("Message not found")))
+            .then(messageReadReceiptService.addEditedMessage(chatId, messageId))
             .then(Mono.just(SuccessResult() as RequestResult))
     }
 
-    @Transactional
+    // проблема с транзакциями
     fun deleteMessage (
         userId: UUID,
         chatId: UUID,
         messageId: UUID
     ): Mono<RequestResult> {
         return checkIfUserMember(userId, chatId)
-            .then(messageRepository.deleteById(messageId))
+            .then(messageRepository.deleteById(messageId)) // сначала удаляем сообщение
+            .then(messageReadReceiptService.addDeletedMessage(chatId, messageId)) // потом уведомляем об этом в message read receipt
             .thenReturn(SuccessResult() as RequestResult)
     }
 
-    @Transactional
     fun createMessage (
         userId: UUID,
         chatId: UUID,
@@ -106,20 +109,157 @@ class MessageService (
         phraseToFind: MessageSearchDTO
     ): Flux<Message> {
         return chatService.getAllChatsForUser(userId)
-            .flatMap { chatIdShell ->
+            .flatMap { chatId ->
                 messageRepository.findByChatIdAndTextContaining(
-                    chatIdShell.chatId, phraseToFind.phrase
+                    chatId, phraseToFind.phrase
                 )
             }
     }
 
-    @Transactional
+    fun markAsViewed(userId: UUID, chatId: UUID, messageId: UUID): Mono<RequestResult> {
+        val binMessageId = UUIDUtil.toBinary(messageId)
+        return mongoTemplate.findOne(
+            Query(Criteria.where("_id").`is`(binMessageId)),
+            Message::class.java
+        ).flatMap { message ->
+            if (message.senderId != userId) {
+                Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_SENDER))
+            } else if (message.viewedBy.contains(userId)) {
+                Mono.just(SuccessResult())
+            } else {
+                val update = Update()
+                    .addToSet("viewedBy", userId)
+                    .set("status", MessageStatus.VIEWED)
+
+                mongoTemplate.updateFirst(
+                    Query(Criteria.where("_id").`is`(messageId)),
+                    update,
+                    Message::class.java
+                ).flatMap { result ->
+                    if (result.modifiedCount > 0) {
+                        messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
+                    } else {
+                        Mono.empty()
+                    }
+                }.thenReturn(SuccessResult() as RequestResult)
+            }
+        }.switchIfEmpty(Mono.error(NotFoundException("Message not found")))
+    }
+
+    /*
+    // лучше удалить
+    // если админ хочет удалить
+    // Не протестировано, но должно работать
     fun deleteAllMessages(
+        userId: UUID,
         chatId: UUID
     ): Mono<RequestResult> {
-        return messageRepository.deleteMessageByChatId(chatId)
+        return checkIfUserAdmin(userId, chatId)
+            .then(messageRepository.deleteMessageByChatId(chatId))
             .thenReturn(SuccessResult() as RequestResult)
     }
+     */
+
+    // Проблема с транзакциями
+    // функция для использования другим микросервисом, там и происходит проверка на админа
+    fun deleteChat(chatId: UUID): Mono<RequestResult> {
+        return messageRepository.deleteMessageByChatId(chatId) // удаляем все сообщения
+            .then(messageReadReceiptService.deleteChat(chatId)) // удаляем все message read receipt
+            .thenReturn(SuccessResult())
+    }
+
+    fun getUnreadChanges(userId: UUID, chatId: UUID): Mono<UnreadChanges> {
+        return checkIfUserMember(userId, chatId)
+            .then(messageReadReceiptService.getByUserIdAndChatId(userId, chatId))
+            .flatMap { messageReadReceipt ->
+                val lastTimestamp = messageReadReceipt.lastConfirmedTime
+                if (lastTimestamp == null) { // если прочитанных сообщений еще нет
+                    val pageable = PageRequest.of(
+                        0,
+                        properties.paginationMessagesQuantity,
+                        Sort.by(Sort.Direction.DESC, "timestamp")
+                    )
+                    messageRepository.findByChatIdAndTimestampBefore(chatId, Instant.now(), pageable)
+                        .collectList()
+                        .map { newMessages ->
+                            val convertedNewMessages = ArrayList<Message>()
+                            newMessages.forEach {
+                                convertedNewMessages.add(it)
+                            }
+                            UnreadChanges(convertedNewMessages, ArrayList(), ArrayList())
+                        }
+                } else {
+                    val newMessages = messageRepository.findByChatIdAndTimestampAfter(chatId, lastTimestamp).collectList()
+                    val editedMessages = Flux.fromIterable(messageReadReceipt.pendingUpdates.edited)
+                        .flatMap { messageId ->
+                            messageRepository.findById(messageId)
+                        }
+                        .collectList()
+                    val deletedId = messageReadReceipt.pendingUpdates.deleted
+                    Mono.zip(newMessages, editedMessages)
+                        .flatMap { tuple ->
+                            val convertedNewMessages = ArrayList<Message>()
+                            val convertedEditedMessages = ArrayList<Message>()
+                            tuple.t1.forEach {
+                                convertedNewMessages.add(it)
+                            }
+                            tuple.t2.forEach {
+                                convertedEditedMessages.add(it)
+                            }
+                            Mono.just(UnreadChanges(convertedNewMessages, convertedEditedMessages, deletedId))
+                        }
+                }
+            }
+            .switchIfEmpty(Mono.error(NotFoundException("Message read receipt not found")))
+    }
+
+    private fun checkIfUserMember(userId: UUID, chatId: UUID): Mono<UserDataInChat> {
+        return chatService.getUserInChat(chatId, userId)
+            .flatMap { memberData ->
+                if (memberData.role == UserStatusInChat.NOT_MEMBER) {
+                    Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_MEMBER))
+                } else {
+                    Mono.just(memberData)
+                }
+            }
+    }
+
+    private fun checkIfUserAdmin(userId: UUID, chatId: UUID): Mono<UserDataInChat> {
+        return chatService.getUserInChat(chatId, userId)
+            .flatMap { memberData ->
+                if (memberData.role == UserStatusInChat.ADMIN) {
+                    Mono.just(memberData)
+                } else {
+                    Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_ADMIN))
+                }
+            }
+    }
+}
+
+/*
+    fun getMessagesBefore (
+        userId: UUID,
+        chatId: UUID,
+        startMessageId: UUID
+    ): Flux<Message> {
+        val pageable = PageRequest.of(
+            0,
+            properties.paginationMessagesQuantity,
+            Sort.by(Sort.Direction.DESC, "timestamp")
+        )
+        return checkIfUserMember(userId, chatId)
+            .then(messageRepository.findById(startMessageId))
+            .switchIfEmpty(Mono.error(NotFoundException("Message not found")))
+            .flatMapMany { startMessage ->
+                if (startMessage.chatId != chatId) {
+                    Mono.error(NotFoundException("ChatId is wrong"))
+                } else {
+                    messageRepository.findByChatIdAndTimestampBefore(chatId, startMessage.timestamp, pageable)
+                }
+            }
+    }
+*/
+
 /*
     fun updateMessageStatus(
         userId: UUID,
@@ -143,43 +283,6 @@ class MessageService (
             }
     }
 */
-    fun markAsViewed(userId: UUID, chatId: UUID, messageId: UUID): Mono<RequestResult> {
-        val binMessageId = UUIDUtil.toBinary(messageId)
-        return mongoTemplate.findOne(
-            Query(Criteria.where("_id").`is`(binMessageId)),
-            Message::class.java
-        ).flatMap { message ->
-            if (message.senderId != userId) {
-                Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_SENDER))
-            } else if (message.viewedBy.contains(userId)) {
-                Mono.just(SuccessResult())
-            } else {
-                val update = Update()
-                    .addToSet("viewedBy", userId)
-                    .set("status", MessageStatus.VIEWED)
-
-                mongoTemplate.updateFirst(
-                    Query(Criteria.where("_id").`is`(messageId)),
-                    update,
-                    Message::class.java
-                ).map {
-                    SuccessResult() as RequestResult
-                }
-            }
-        }.switchIfEmpty(Mono.error(NotFoundException("Message not found")))
-    }
-
-    private fun checkIfUserMember(userId: UUID, chatId: UUID): Mono<UserDataInChat> {
-        return chatService.getUserInChat(chatId, userId)
-            .flatMap { memberData ->
-                if (memberData.role == UserStatusInChat.NOT_MEMBER) {
-                    Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_MEMBER))
-                } else {
-                    Mono.just(memberData)
-                }
-            }
-    }
-}
 /*
 @Service
 class MessageService(

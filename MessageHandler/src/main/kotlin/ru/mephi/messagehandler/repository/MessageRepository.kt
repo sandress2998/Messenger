@@ -1,7 +1,6 @@
 package ru.mephi.messagehandler.repository
 
 import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
@@ -11,7 +10,7 @@ import java.time.Instant
 import java.util.*
 
 @Repository
-interface MessageRepository : ReactiveMongoRepository<Message, UUID> {
+interface MessageRepository: ReactiveMongoRepository<Message, UUID> {
     fun findByChatIdAndTimestampBefore(
         chatId: UUID,
         timestamp: Instant,
@@ -21,10 +20,12 @@ interface MessageRepository : ReactiveMongoRepository<Message, UUID> {
     fun findByChatIdAndTextContaining(
         chatId: UUID,
         text: String
-        //pageable: Pageable
     ): Flux<Message>
 
-    fun deleteMessageByChatIdAndId(chatId: UUID, id: UUID): Mono<Void>
+    fun findByChatIdAndTimestampAfter(
+        chatId: UUID,
+        timestamp: Instant
+    ): Flux<Message>
 
     fun deleteMessageByChatId(chatId: UUID): Mono<Void>
 }

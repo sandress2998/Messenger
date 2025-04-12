@@ -10,10 +10,10 @@ import java.util.*
 @Table(name = "chats_members")
 data class ChatMember(
     @Column(value = "chat_id")
-    val chatId: UUID?,
+    val chatId: UUID,
 
     @Column(value = "user_id")
-    val userId: UUID?,
+    val userId: UUID,
 
     val role: ChatRole = ChatRole.MEMBER,
 

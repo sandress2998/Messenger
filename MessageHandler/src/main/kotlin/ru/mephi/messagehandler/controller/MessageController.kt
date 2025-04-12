@@ -8,21 +8,24 @@ import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
 import ru.mephi.messagehandler.models.dto.request.MessageSearchDTO
 import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
 import ru.mephi.messagehandler.models.dto.response.RequestResult
+import ru.mephi.messagehandler.models.dto.response.UnreadChanges
 import ru.mephi.messagehandler.models.entity.MessageStatus
+import ru.mephi.messagehandler.service.MessageReadReceiptService
 import ru.mephi.messagehandler.service.MessageService
 import java.util.*
 
 @RestController
 class MessageController(
-    private val messageService: MessageService
+    private val messageService: MessageService,
+    private val messageReadReceiptService: MessageReadReceiptService
 ) {
     @GetMapping("/chats/{chatId}/messages/{startMessageId}")
-    fun getMessages(
+    fun getMessagesBefore(
         @RequestHeader("X-UserId") userId: UUID,
         @PathVariable chatId: UUID,
         @PathVariable startMessageId: UUID
     ): Flux<Message> {
-        return messageService.getMessages(userId, chatId, startMessageId)
+        return messageService.getMessagesBefore(userId, chatId, startMessageId)
     }
 
     // изменение сообщения, удаление сообщения - это не через REST API
@@ -66,10 +69,10 @@ class MessageController(
 
     @DeleteMapping("/chats/{chatId}/messages")
     fun deleteAllMessages(
-        //@RequestHeader("X-UserId") userId: UUID,
+        @RequestHeader("X-UserId") userId: UUID,
         @PathVariable chatId: UUID
     ): Mono<RequestResult> {
-        return messageService.deleteAllMessages(chatId)
+        return messageService.deleteAllMessages(userId, chatId)
     }
 
     @PatchMapping("/chats/{chatId}/messages/{messageId}/status/{status}")
@@ -80,6 +83,40 @@ class MessageController(
         @PathVariable status: MessageStatus
     ): Mono<RequestResult> {
         return messageService.markAsViewed(userId, chatId, messageId)
+    }
+
+    // ЗДЕСЬ ЗАКАНЧИВАЮТСЯ ПРОТЕСТИРОВАННЫЕ ФУНКЦИИ
+    // И начинаются нетоптаные тропы...
+
+    @PostMapping("/chats/{chatId}/users")
+    fun createMessageReadReceipt(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID
+    ): Mono<Void> {
+        return messageReadReceiptService.create(userId, chatId)
+    }
+
+    @DeleteMapping("/chats/{chatId}/users")
+    fun deleteMessageReadReceipt(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID
+    ): Mono<Void> {
+        return messageReadReceiptService.delete(userId, chatId)
+    }
+
+    @DeleteMapping("/chats/{chatId}")
+    fun deleteChat(
+        @PathVariable chatId: UUID
+    ): Mono<RequestResult> {
+        return messageService.deleteChat(chatId)
+    }
+
+    @GetMapping("/chats/{chatId}/messages")
+    fun getUnreadChanges(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID
+    ): Mono<UnreadChanges> {
+        return messageService.getUnreadChanges(userId, chatId)
     }
 }
 

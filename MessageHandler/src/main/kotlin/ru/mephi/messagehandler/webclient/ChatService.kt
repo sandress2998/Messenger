@@ -31,7 +31,7 @@ class ChatService (
             .bodyToMono(UserDataInChat::class.java)
     }
 
-    fun getAllChatsForUser(userId: UUID): Flux<ChatId> {
+    fun getAllChatsForUser(userId: UUID): Flux<UUID> {
         return chatServiceWebClient.get()
             .uri("/chats/id")
             .header("X-UserId", userId.toString())
@@ -42,12 +42,34 @@ class ChatService (
                 response.createException().flatMap { Mono.error(it) }
             }
             .bodyToFlux(ChatId::class.java)
+            .map { chatId ->
+                chatId.chatId
+            }
             .onErrorResume { e ->
                 println("Error fetching chats for user $userId: ${e.message}")
                 Flux.error(RuntimeException("Failed to fetch chats"))
             }
     }
-
+/*
+    fun getAllUsersInChat(chatId: UUID): Flux<UUID> {
+        return chatServiceWebClient.get()
+            .uri("/chats/{chatId}/users", chatId)
+            .accept(MediaType.APPLICATION_JSON)
+            .accept(MediaType.TEXT_EVENT_STREAM) // Для streaming ответов
+            .retrieve()
+            .onStatus(HttpStatusCode::isError) { response ->
+                response.createException().flatMap { Mono.error(it) }
+            }
+            .bodyToFlux(UserId::class.java)
+            .map { userId ->
+                userId.userId
+            }
+            .onErrorResume { e ->
+                println("Error fetching users for chat $chatId: ${e.message}")
+                Flux.error(RuntimeException("Failed to fetch users"))
+            }
+    }
+*/
     private fun handleErrorResponse(response: ClientResponse): Mono<FailureResult> {
         return Mono.error(
             WebClientResponseException.create(

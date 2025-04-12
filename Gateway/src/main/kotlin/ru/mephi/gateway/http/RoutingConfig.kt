@@ -65,6 +65,12 @@ class RoutingConfiguration {
                     .method(HttpMethod.GET, HttpMethod.POST)
                     .uri("lb://message-handler-service:8091")
             }
+            .route("unread_changes_route") { r ->
+                r.path("/chats/{chatId}/messages")
+                    .and()
+                    .method(HttpMethod.GET)
+                    .uri("lb://message-handler-service:8091")
+            }
             .build()
     }
 }

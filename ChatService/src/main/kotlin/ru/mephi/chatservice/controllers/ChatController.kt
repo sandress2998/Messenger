@@ -27,7 +27,7 @@ class ChatController(
     fun createChat(
         @RequestHeader("X-UserId") userId: UUID,
         @RequestBody chat: Chat
-    ): Mono<RequestResult> {
+    ): Mono<ChatCreationResponse> {
         return chatService.createChat(chat, userId)
     }
 
@@ -110,9 +110,19 @@ class ChatController(
         return chatService.getUserRoleInChat(chatId, userId)
     }
 
+    // функция api для другого микросервиса
     @GetMapping("/id")
     fun getChatsId(@RequestHeader("X-UserId") userId: UUID): Flux<ChatId> {
         return chatService.getChatsId(userId)
     }
 
+    /*
+    // функция api для другого микросервиса
+    @GetMapping("/{chatId}/users")
+    fun getUsersIdInChat(
+        @PathVariable("chatId") chatId: UUID
+    ): Flux<UserId> {
+        return chatService.getUsersIdByChatId(chatId)
+    }
+     */
 }

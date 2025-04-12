@@ -40,4 +40,7 @@ interface ChatMembersRepository: ReactiveCrudRepository<ChatMember, UUID> {
 
     @Query("SELECT chat_id FROM chats_members WHERE user_id = :userId")
     fun getChatsIdByUserId(userId: UUID): Flux<UUID>
+
+    @Query("SELECT user_id FROM chats_members WHERE chat_id = :chatId")
+    fun getUsersIdByChatId(chatId: UUID): Flux<UUID>
 }
