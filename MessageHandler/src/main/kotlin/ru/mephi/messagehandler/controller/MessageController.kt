@@ -67,6 +67,7 @@ class MessageController(
         return messageService.searchMessages(userId, messageSearchDTO)
     }
 
+    /*
     @DeleteMapping("/chats/{chatId}/messages")
     fun deleteAllMessages(
         @RequestHeader("X-UserId") userId: UUID,
@@ -74,6 +75,7 @@ class MessageController(
     ): Mono<RequestResult> {
         return messageService.deleteAllMessages(userId, chatId)
     }
+    */
 
     @PatchMapping("/chats/{chatId}/messages/{messageId}/status/{status}")
     fun updateMessageStatus(

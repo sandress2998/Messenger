@@ -41,12 +41,14 @@ class RoutingConfiguration {
                     .method(HttpMethod.POST)
                     .uri("lb://message-handler-service:8091")
             }
+            /*
             .route("delete_all_messages") { r ->
                 r.path("/chats/{chatId}/messages")
                     .and()
                     .method(HttpMethod.DELETE)
                     .uri("lb://message-handler-service:8091")
             }
+            */
             .route("concrete_message_route") { r ->
                 r.path("/chats/{chatId}/messages/{messageId}")
                     .and()
