@@ -3,6 +3,7 @@ package ru.mephi.chatservice.controllers
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import ru.mephi.chatservice.models.ChatRole
 import ru.mephi.chatservice.models.dto.*
 import ru.mephi.chatservice.models.entity.Chat
 import ru.mephi.chatservice.models.entity.ChatMember
@@ -68,16 +69,15 @@ class ChatController(
         )
     }
 
+    // по-хорошему здесь нужен patch, но мне лень пересобирать изображения
     @PutMapping("/{chatId}/members/{memberId}")
     fun updateMemberToChat(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет изменить информацию о человеке в чате
         @PathVariable("chatId") chatId: UUID,
         @PathVariable("memberId") memberId: UUID,
-        @RequestBody chatMember: ChatMember
+        @RequestBody newRole: UserRoleInChat
     ): Mono<RequestResult> {
-        return chatService.updateChatMemberToChat(
-            chatMember.copy(id = memberId, chatId = chatId), userInitiatorId
-        )
+        return chatService.updateChatMemberToChat(chatId, memberId, newRole.role, userInitiatorId)
     }
 
     @DeleteMapping("/{chatId}/members/{memberId}")

@@ -11,6 +11,7 @@ import org.springframework.transaction.reactive.TransactionalOperator
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import ru.mephi.chatservice.models.ActivityStatus
 import ru.mephi.chatservice.models.ChatRole
 import ru.mephi.chatservice.models.dto.*
 import ru.mephi.chatservice.models.exception.NotFoundException
@@ -94,14 +95,14 @@ class ChatService(
                 } else {
                     chatMembersRepository.getChatMembersByChatId(chatId)
                         .flatMap { chatMember: ChatMember ->
-                            userRepository.getUsernameById(chatMember.userId)
+                            userRepository.getUserInfoById(chatMember.userId)
                                 // пропускаем тех пользователей, которых не нашли?
                                 //.filter { username -> username != null}
-                                .map { username: String? ->
-                                    MemberInfoResponse(chatMember.id!!, username!!, chatMember.role)
+                                .map { userInfo: UserInfo ->
+                                    MemberInfoResponse(chatMember.id!!, userInfo.username!!, chatMember.role, userInfo.activity!!)
                                 }
                                 .switchIfEmpty(
-                                    Mono.just(MemberInfoResponse(chatMember.id!!, "DELETED_ACCOUNT", chatMember.role))
+                                    Mono.just(MemberInfoResponse(chatMember.id!!, "DELETED_ACCOUNT", chatMember.role, ActivityStatus.INACTIVE))
                                 )
                         }
                 }
@@ -132,9 +133,9 @@ class ChatService(
                     }
             }
             .flatMap { member ->
-                userRepository.getUsernameById(member.id!!)
-                    .map { username ->
-                        MemberInfoResponse(member.id, username!!, member.role)
+                userRepository.getUserInfoById(member.userId)
+                    .map { userInfo ->
+                        MemberInfoResponse(member.id!!, userInfo.username!!, member.role, userInfo.activity!!)
                     }
                     .switchIfEmpty(Mono.error(NotFoundException("User not found")))
             }
@@ -142,10 +143,7 @@ class ChatService(
     }
 
     @Transactional
-    fun updateChatMemberToChat(chatMember: ChatMember, userInitiatorId: UUID): Mono<RequestResult> {
-        val chatId = chatMember.chatId
-        val newRole = chatMember.role
-        val memberId = chatMember.id!!
+    fun updateChatMemberToChat(chatId: UUID, memberId: UUID, newRole: ChatRole, userInitiatorId: UUID): Mono<RequestResult> {
         return isUserAdminInChat(chatId, userInitiatorId)
             .flatMap { isAdmin: Boolean ->
                 if (!isAdmin) {
@@ -182,16 +180,21 @@ class ChatService(
                     Mono.empty()
                 }
             }
-            .then(userRepository.getUserIdAndUsernameByEmail(email))
-            .flatMap { pair ->
-                val userId = pair.first!!
-                val username = pair.second!!
-                checkIfUserIsAlreadyMember(userId, chatId)
-                    .then(chatMembersRepository.save(ChatMember(chatId, userId, role)))
-                    .flatMap { savedChatMember ->
-                        messageHandlerService.createMessageReadReceipt(userId, chatId)
-                            .thenReturn(MemberInfoResponse(savedChatMember.id!!, username, savedChatMember.role))
-                    }
+            .then(userRepository.getUserInfoByEmail(email))
+            .flatMap { userInfoExpanded ->
+                val userId = userInfoExpanded.id
+                if (userId == null) {
+                    Mono.error(NotFoundException("User not found"))
+                } else {
+                    val username = userInfoExpanded.username!!
+                    val activityStatus = userInfoExpanded.activity!!
+                    checkIfUserIsAlreadyMember(userId, chatId)
+                        .then(chatMembersRepository.save(ChatMember(chatId, userId, role)))
+                        .flatMap { savedChatMember ->
+                            messageHandlerService.createMessageReadReceipt(userId, chatId)
+                                .thenReturn(MemberInfoResponse(savedChatMember.id!!, username, savedChatMember.role, activityStatus))
+                        }
+                }
             }
             .switchIfEmpty(Mono.error(NotFoundException("User not found")))
             .`as`(transactionalOperator::transactional)

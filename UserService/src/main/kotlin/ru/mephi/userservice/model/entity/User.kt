@@ -1,7 +1,6 @@
 package ru.mephi.userservice.model.entity
 
 import org.springframework.data.annotation.Id
-import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
 import java.util.*
 
@@ -10,5 +9,10 @@ data class User (
     @Id
     val id : UUID,
     val username : String,
-    val email : String
+    val email : String,
+    val activity: ActivityStatus
 )
+
+enum class ActivityStatus {
+    ACTIVE, INACTIVE
+}

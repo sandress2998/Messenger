@@ -69,11 +69,11 @@ class MessageService (
         messageId: UUID,
         updatedMessage: MessageUpdateDTO
     ): Mono<RequestResult> {
-        //val binMessageId = UUIDUtil.toBinary(messageId)
         val query = Query(Criteria.where("_id").`is`(messageId))
         val update = Update().set("text", updatedMessage.text)
 
         return checkIfUserMember(userId, chatId)
+            .then(checkIfUserSender(userId, messageId))
             .then(mongoTemplate.findAndModify(query, update, Message::class.java))
             .switchIfEmpty(Mono.error(NotFoundException("Message not found")))
             .then(messageReadReceiptService.addEditedMessage(chatId, messageId))
@@ -87,6 +87,7 @@ class MessageService (
         messageId: UUID
     ): Mono<RequestResult> {
         return checkIfUserMember(userId, chatId)
+            .then(checkIfUserSender(userId, messageId))
             .then(messageRepository.deleteById(messageId)) // сначала удаляем сообщение
             .then(messageReadReceiptService.addDeletedMessage(chatId, messageId)) // потом уведомляем об этом в message read receipt
             .thenReturn(SuccessResult() as RequestResult)
@@ -231,6 +232,17 @@ class MessageService (
                     Mono.just(memberData)
                 } else {
                     Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_ADMIN))
+                }
+            }
+    }
+
+    private fun checkIfUserSender(userId: UUID, messageId: UUID): Mono<Void> {
+        return messageRepository.findById(messageId)
+            .flatMap { message ->
+                if (message.senderId == userId) {
+                    Mono.empty()
+                } else {
+                    Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_SENDER))
                 }
             }
     }
