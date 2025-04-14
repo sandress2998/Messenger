@@ -50,4 +50,4 @@ class KafkaConsumerService(private val messageService: MessageService) {
             )
     }
 }
- */
+*/

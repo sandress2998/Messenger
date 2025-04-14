@@ -116,6 +116,7 @@ class ChatController(
         return chatService.getChatsId(userId)
     }
 
+
     /*
     // функция api для другого микросервиса
     @GetMapping("/{chatId}/users")

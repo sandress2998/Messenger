@@ -8,7 +8,6 @@ import reactor.kotlin.core.publisher.switchIfEmpty
 import ru.mephi.userservice.model.dto.CreateUserDTO
 import ru.mephi.userservice.model.dto.GetUserDTO
 import ru.mephi.userservice.model.dto.UpdateUserDTO
-import ru.mephi.userservice.model.entity.ActivityStatus
 import ru.mephi.userservice.model.entity.User
 import ru.mephi.userservice.model.exception.FailureResponse
 import ru.mephi.userservice.repository.UserRepository
@@ -28,7 +27,7 @@ class UserService(
         val email = user.email
 
         return userRepository.upsert(userId, username, email)
-            .thenReturn(User(id = userId, username = username , email = email, activity = ActivityStatus.ACTIVE))
+            .thenReturn(User(id = userId, username = username , email = email))
     }
 
     @Transactional
@@ -42,7 +41,7 @@ class UserService(
             .flatMap {
                 userRepository.upsert(userId, username, email)
             }
-            .thenReturn(User(id = userId, username = username , email = email, activity = ActivityStatus.ACTIVE))
+            .thenReturn(User(id = userId, username = username , email = email))
     }
 
     @Transactional
@@ -64,11 +63,6 @@ class UserService(
             .switchIfEmpty {
                 Mono.error(FailureResponse("User wasn't found"))
             }
-    }
-
-    @Transactional
-    fun updateActivityStatus(id: UUID, activityStatus: ActivityStatus): Mono<Void> {
-        return userRepository.updateActivityStatus(id, activityStatus)
     }
 
     fun getUsers(): Flux<User> {

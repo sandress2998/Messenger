@@ -35,6 +35,8 @@ class UserRepository(private val databaseClient: DatabaseClient) {
             .one()
     }
 
+
+    /* Это надо убрать, т.к. теперь нельзя достать статус активности через postgres
     fun getUserInfoById(userId: UUID): Mono<UserInfo> {
         return databaseClient.sql("SELECT username, activity FROM users WHERE id = $1;")
             .bind(0, userId)
@@ -57,4 +59,5 @@ class UserRepository(private val databaseClient: DatabaseClient) {
             }
             .one()
     }
+    */
 }

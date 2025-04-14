@@ -7,9 +7,9 @@ import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import ru.mephi.messagehandler.models.MessageAction
 import ru.mephi.messagehandler.models.MessageProperties
 import ru.mephi.messagehandler.models.UserStatusInChat
 import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
@@ -21,7 +21,6 @@ import ru.mephi.messagehandler.models.dto.response.UnreadChanges
 import ru.mephi.messagehandler.models.entity.Message
 import ru.mephi.messagehandler.models.entity.MessageStatus
 import ru.mephi.messagehandler.models.exception.AccessDeniedException
-import ru.mephi.messagehandler.models.exception.FailureResult
 import ru.mephi.messagehandler.models.exception.NotFoundException
 import ru.mephi.messagehandler.repository.MessageRepository
 import ru.mephi.messagehandler.util.UUIDUtil
@@ -29,7 +28,6 @@ import ru.mephi.messagehandler.webclient.ChatService
 import ru.mephi.messagehandler.webclient.dto.UserDataInChat
 import java.time.Instant
 import java.util.*
-import kotlin.collections.ArrayList
 
 
 @Service
@@ -117,34 +115,36 @@ class MessageService (
             }
     }
 
-    fun markAsViewed(userId: UUID, chatId: UUID, messageId: UUID): Mono<RequestResult> {
+    fun markAsViewed(userId: UUID, chatId: UUID, messageId: UUID): Mono<Void> {
         val binMessageId = UUIDUtil.toBinary(messageId)
         return mongoTemplate.findOne(
-            Query(Criteria.where("_id").`is`(binMessageId)),
-            Message::class.java
-        ).flatMap { message ->
-            if (message.senderId != userId) {
-                Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_SENDER))
-            } else if (message.viewedBy.contains(userId)) {
-                Mono.just(SuccessResult())
-            } else {
-                val update = Update()
-                    .addToSet("viewedBy", userId)
-                    .set("status", MessageStatus.VIEWED)
+                Query(Criteria.where("_id").`is`(binMessageId)),
+                Message::class.java
+            )
+            .switchIfEmpty(Mono.error(NotFoundException("Message not found")))
+            .flatMap { message ->
+                if (message.senderId != userId) {
+                    Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_SENDER))
+                } else if (message.viewedBy.contains(userId)) {
+                    Mono.empty()
+                } else {
+                    val update = Update()
+                        .addToSet("viewedBy", userId)
+                        .set("status", MessageStatus.VIEWED)
 
-                mongoTemplate.updateFirst(
-                    Query(Criteria.where("_id").`is`(messageId)),
-                    update,
-                    Message::class.java
-                ).flatMap { result ->
-                    if (result.modifiedCount > 0) {
-                        messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
-                    } else {
-                        Mono.empty()
+                    mongoTemplate.updateFirst(
+                        Query(Criteria.where("_id").`is`(messageId)),
+                        update,
+                        Message::class.java
+                    ).flatMap { result ->
+                        if (result.modifiedCount > 0) {
+                            messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
+                        } else {
+                            Mono.empty()
+                        }
                     }
-                }.thenReturn(SuccessResult() as RequestResult)
+                }
             }
-        }.switchIfEmpty(Mono.error(NotFoundException("Message not found")))
     }
 
     /*
@@ -212,6 +212,28 @@ class MessageService (
                 }
             }
             .switchIfEmpty(Mono.error(NotFoundException("Message read receipt not found")))
+    }
+
+    fun markAsHandledMessage(userId: UUID, chatId: UUID, messageId: UUID, action: MessageAction): Mono<RequestResult> {
+        return checkIfUserMember(userId, chatId)
+            .then(Mono.defer {
+                 when (action) {
+                     MessageAction.VIEWED -> {
+                        messageRepository.findById(messageId)
+                            .flatMap { message ->
+                                messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
+                            }
+                            .then(markAsViewed(userId, chatId, messageId))
+                        }
+                     MessageAction.UPDATED -> {
+                         messageReadReceiptService.markEditedMessageAsProcessed(userId, chatId, messageId)
+                        }
+                     MessageAction.DELETED -> {
+                         messageReadReceiptService.markDeletedMessageAsProcessed(userId,chatId, messageId)
+                     }
+                }
+            })
+            .thenReturn(SuccessResult())
     }
 
     private fun checkIfUserMember(userId: UUID, chatId: UUID): Mono<UserDataInChat> {

@@ -8,12 +8,9 @@ import org.springframework.data.mongodb.core.query.Update
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.messagehandler.models.dto.response.RequestResult
-import ru.mephi.messagehandler.models.dto.response.SuccessResult
 import ru.mephi.messagehandler.models.entity.MessageReadReceipt
 import ru.mephi.messagehandler.models.exception.NotFoundException
 import ru.mephi.messagehandler.repository.MessageReadReceiptRepository
-import ru.mephi.messagehandler.util.UUIDUtil
 import java.time.Instant
 import java.util.*
 
@@ -34,7 +31,7 @@ class MessageReadReceiptService (
         return messageReadReceiptRepository.getByChatId(chatId)
     }
 
-    fun updateLastConfirmedTime(userId: UUID, chatId: UUID, newTime: Instant): Mono<RequestResult> {
+    fun updateLastConfirmedTime(userId: UUID, chatId: UUID, newTime: Instant): Mono<Void> {
         return getByUserIdAndChatId(userId, chatId)
             .flatMap { messageReadReceipt ->
                 if (messageReadReceipt.lastConfirmedTime == null ||
@@ -54,7 +51,7 @@ class MessageReadReceiptService (
             .flatMap { result ->
                 checkIfModified(result)
             }
-            .thenReturn(SuccessResult())
+            .then()
     }
 
     fun markEditedMessageAsProcessed(userId: UUID, chatId: UUID, editedMessageId: UUID): Mono<Void> {
@@ -68,7 +65,6 @@ class MessageReadReceiptService (
             .flatMap { result ->
                 checkIfModified(result)
             }
-            .then()
     }
 
     fun markDeletedMessageAsProcessed(userId: UUID, chatId: UUID, deletedMessageId: UUID): Mono<Void> {

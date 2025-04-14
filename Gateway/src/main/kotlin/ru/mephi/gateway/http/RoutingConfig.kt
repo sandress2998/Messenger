@@ -55,12 +55,14 @@ class RoutingConfiguration {
                     .method(HttpMethod.GET, HttpMethod.PATCH, HttpMethod.DELETE)
                     .uri("lb://message-handler-service:8091")
             }
+            /*
             .route("update_status_route") { r ->
                 r.path("/chats/{chatId}/messages/{messageId}/status/{status}")
                     .and()
                     .method(HttpMethod.PATCH)
                     .uri("lb://message-handler-service:8091")
             }
+            */
             .route("generic_messages_route") { r ->
                 r.path("/messages")
                     .and()
@@ -71,6 +73,12 @@ class RoutingConfiguration {
                 r.path("/chats/{chatId}/messages")
                     .and()
                     .method(HttpMethod.GET)
+                    .uri("lb://message-handler-service:8091")
+            }
+            .route("notification_about_handled_action_with_message") { r ->
+                r.path(("/chats/{chatId}/messages/{messageId}"))
+                    .and()
+                    .method(HttpMethod.POST)
                     .uri("lb://message-handler-service:8091")
             }
             .build()

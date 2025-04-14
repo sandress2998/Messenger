@@ -9,10 +9,6 @@ data class User (
     @Id
     val id : UUID,
     val username : String,
-    val email : String,
-    val activity: ActivityStatus
-)
+    val email : String
 
-enum class ActivityStatus {
-    ACTIVE, INACTIVE
-}
+)

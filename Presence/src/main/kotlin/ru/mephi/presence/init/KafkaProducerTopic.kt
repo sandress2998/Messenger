@@ -1,4 +1,4 @@
-package ru.mephi.presence.kafka.consumer
+package ru.mephi.presence.init
 
 import org.apache.kafka.clients.admin.NewTopic
 import org.springframework.context.annotation.Bean
@@ -6,11 +6,11 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.kafka.config.TopicBuilder
 
 @Configuration
-class KafkaConsumerTopic {
+class KafkaProducerTopic {
     @Bean
-    fun fromWsToPresenceTopic(): NewTopic {
+    fun fromPresenceToWsTopic(): NewTopic {
         return TopicBuilder
-            .name("activity-from-ws-to-presence")
+            .name("activity-from-presence-to-ws")
             .build()
     }
 }

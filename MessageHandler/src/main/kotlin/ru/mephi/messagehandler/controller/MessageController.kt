@@ -3,6 +3,7 @@ package ru.mephi.messagehandler.controller
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import ru.mephi.messagehandler.models.MessageAction
 import ru.mephi.messagehandler.models.entity.Message
 import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
 import ru.mephi.messagehandler.models.dto.request.MessageSearchDTO
@@ -77,6 +78,7 @@ class MessageController(
     }
     */
 
+    /* Теперь это лишняя функция
     @PatchMapping("/chats/{chatId}/messages/{messageId}/status/{status}")
     fun updateMessageStatus(
         @RequestHeader("X-UserId") userId: UUID,
@@ -86,6 +88,7 @@ class MessageController(
     ): Mono<RequestResult> {
         return messageService.markAsViewed(userId, chatId, messageId)
     }
+     */
 
     // ЗДЕСЬ ЗАКАНЧИВАЮТСЯ ПРОТЕСТИРОВАННЫЕ ФУНКЦИИ
     // И начинаются нетоптаные тропы...
@@ -119,6 +122,17 @@ class MessageController(
         @PathVariable chatId: UUID
     ): Mono<UnreadChanges> {
         return messageService.getUnreadChanges(userId, chatId)
+    }
+
+    // это еще не добавлено
+    @PostMapping("/chats/{chatId}/messages/{messageId}")
+    fun markAsHandled(
+        @RequestHeader("X-UserId") userId: UUID,
+        @PathVariable chatId: UUID,
+        @PathVariable messageId: UUID,
+        @RequestParam action: MessageAction
+    ): Mono<RequestResult> {
+        return messageService.markAsHandledMessage(userId, chatId, messageId, action)
     }
 }
 

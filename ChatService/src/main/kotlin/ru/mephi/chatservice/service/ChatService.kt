@@ -29,6 +29,8 @@ class ChatService(
     private val messageHandlerService: MessageHandlerService,
     private val transactionalOperator: TransactionalOperator
 ) {
+    // ВНИМАНИЕ! В НЕКОТОРЫХ ФУНКЦИЯХ ПОСТАВЛЕНЫ ЗАГЛУШКИ С ActivityStatus.ACTIVE
+
     // Операции только с чатами
     // @Transactional только для документации, они никак не управляют транзакциями
     @Transactional
@@ -95,11 +97,11 @@ class ChatService(
                 } else {
                     chatMembersRepository.getChatMembersByChatId(chatId)
                         .flatMap { chatMember: ChatMember ->
-                            userRepository.getUserInfoById(chatMember.userId)
+                            userRepository.getUsernameById(chatMember.userId)
                                 // пропускаем тех пользователей, которых не нашли?
                                 //.filter { username -> username != null}
-                                .map { userInfo: UserInfo ->
-                                    MemberInfoResponse(chatMember.id!!, userInfo.username!!, chatMember.role, userInfo.activity!!)
+                                .map { username ->
+                                    MemberInfoResponse(chatMember.id!!, username!!, chatMember.role, ActivityStatus.ACTIVE)
                                 }
                                 .switchIfEmpty(
                                     Mono.just(MemberInfoResponse(chatMember.id!!, "DELETED_ACCOUNT", chatMember.role, ActivityStatus.INACTIVE))
@@ -133,9 +135,9 @@ class ChatService(
                     }
             }
             .flatMap { member ->
-                userRepository.getUserInfoById(member.userId)
-                    .map { userInfo ->
-                        MemberInfoResponse(member.id!!, userInfo.username!!, member.role, userInfo.activity!!)
+                userRepository.getUsernameById(member.userId)
+                    .map { username ->
+                        MemberInfoResponse(member.id!!, username!!, member.role, ActivityStatus.ACTIVE)
                     }
                     .switchIfEmpty(Mono.error(NotFoundException("User not found")))
             }
@@ -180,19 +182,18 @@ class ChatService(
                     Mono.empty()
                 }
             }
-            .then(userRepository.getUserInfoByEmail(email))
-            .flatMap { userInfoExpanded ->
-                val userId = userInfoExpanded.id
+            .then(userRepository.getUserIdAndUsernameByEmail(email))
+            .flatMap { pair ->
+                val userId = pair.first
                 if (userId == null) {
                     Mono.error(NotFoundException("User not found"))
                 } else {
-                    val username = userInfoExpanded.username!!
-                    val activityStatus = userInfoExpanded.activity!!
+                    val username = pair.second!!
                     checkIfUserIsAlreadyMember(userId, chatId)
                         .then(chatMembersRepository.save(ChatMember(chatId, userId, role)))
                         .flatMap { savedChatMember ->
                             messageHandlerService.createMessageReadReceipt(userId, chatId)
-                                .thenReturn(MemberInfoResponse(savedChatMember.id!!, username, savedChatMember.role, activityStatus))
+                                .thenReturn(MemberInfoResponse(savedChatMember.id!!, username, savedChatMember.role, ActivityStatus.ACTIVE))
                         }
                 }
             }
