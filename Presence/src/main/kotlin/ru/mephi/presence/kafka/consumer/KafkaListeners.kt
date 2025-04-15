@@ -7,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import ru.mephi.presence.model.dto.ChatActivityChangeEvent
+import ru.mephi.presence.kafka.dto.ChatActivityChangeEvent
 import ru.mephi.presence.model.service.StatusMessaging
 
 @Component

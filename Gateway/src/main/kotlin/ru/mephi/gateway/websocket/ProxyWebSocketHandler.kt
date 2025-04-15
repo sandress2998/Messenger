@@ -11,6 +11,7 @@ import ru.mephi.gateway.security.JwtService
 import java.net.URI
 import java.time.Duration
 import java.time.Instant
+import java.util.*
 
 class ProxyWebSocketHandler(
     private val webSocketClient: WebSocketClient,
@@ -41,15 +42,15 @@ class ProxyWebSocketHandler(
             return session.close() // Закрываем сессию, если токен уже истёк
         }
 
-        val email: String = claims.subject
+        val userId: String = claims.subject
 
-        println("Token is ok. Email: $email, expirationTime: $expirationTime.")
+        println("Token is ok. UserId: $userId, expirationTime: $expirationTime.")
 
         // Указываем URI целевого микросервиса
         val targetUri = URI.create("ws://websocket-service:8092/ws")
 
         val headers = HttpHeaders()
-        headers.add("X-Email", email)
+        headers.add("X-UserId", userId)
 
         // Устанавливаем соединение с целевым микросервисом
         return webSocketClient.execute(targetUri, headers) { targetSession ->

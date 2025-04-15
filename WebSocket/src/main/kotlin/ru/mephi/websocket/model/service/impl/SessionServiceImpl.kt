@@ -7,33 +7,34 @@ import reactor.core.publisher.Mono
 import ru.mephi.websocket.dao.SessionRepository
 import ru.mephi.websocket.model.service.SessionMap
 import ru.mephi.websocket.model.service.SessionService
+import java.util.UUID
 
 @Service
 class SessionServiceImpl(
     private val sessionRepository: SessionRepository,
     private val sessionMap: SessionMap
 ): SessionService {
-    override fun addSession(email: String, session: WebSocketSession): Mono<Void> {
+    override fun addSession(userId: UUID, session: WebSocketSession): Mono<Void> {
         sessionMap.addSession(session)
-        return sessionRepository.addSession(email, session.id)
+        return sessionRepository.addSession(userId, session.id)
     }
 
-    override fun removeSession(email: String, sessionId: String): Mono<Void> {
+    override fun removeSession(userId: UUID, sessionId: String): Mono<Void> {
         sessionMap.removeSession(sessionId)
-        return sessionRepository.removeSession(email, sessionId)
+        return sessionRepository.removeSession(userId, sessionId)
     }
 
-    override fun getAllSessions(email: String): Flux<String> {
-        return sessionRepository.getAllSessions(email)
+    override fun getAllSessions(userId: UUID): Flux<String> {
+        return sessionRepository.getAllSessions(userId)
     }
 
-    override fun removeAllSessions(email: String): Mono<Void> {
-        return sessionRepository.getAllSessions(email)
+    override fun removeAllSessions(userId: UUID): Mono<Void> {
+        return sessionRepository.getAllSessions(userId)
             .map { sessionId: String ->
                 sessionMap.removeSession(sessionId)
             }
             .then( Mono.defer {
-                sessionRepository.removeAllSessions(email)
+                sessionRepository.removeAllSessions(userId)
             })
     }
 }

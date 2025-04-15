@@ -1,16 +1,16 @@
 package ru.mephi.presence.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.presence.model.dto.ChatActiveMembersRequest
 import ru.mephi.presence.model.dto.ChatActiveMembersResponse
+import java.util.*
 
 
 interface StatusService {
-    fun connectToChat(email: String, chatID: String): Mono<Void>
+    fun connectToChat(userId: UUID, chatId: UUID): Mono<Void>
 
-    fun disconnectFromChat(email: String, chatID: String): Mono<Void>
+    fun disconnectFromChat(userId: UUID, chatId: UUID): Mono<Void>
 
-    fun fetchActiveMembers(request: ChatActiveMembersRequest): Mono<ChatActiveMembersResponse>
+    fun fetchActiveMembers(userId: UUID, chatId: UUID): Mono<ChatActiveMembersResponse>
 }
 
 /*

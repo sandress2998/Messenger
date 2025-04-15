@@ -1,8 +1,11 @@
 package ru.mephi.websocket.model.dto.websocket.receive
 
+import ru.mephi.websocket.shared.enums.ActivityStatus
+import java.util.*
+
 class ChatActivityChangeIngoingNotification(
-    val chatID: String,
-    val status: String
+    val chatId: UUID,
+    val status: ActivityStatus
 ): BaseReceiveNotification() {
     override val category = "activity_status"
 }

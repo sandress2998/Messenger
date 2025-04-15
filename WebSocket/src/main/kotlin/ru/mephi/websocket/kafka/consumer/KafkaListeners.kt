@@ -7,7 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
-import ru.mephi.websocket.model.dto.kafka.receive.ChatActivityChangeIngoingMessage
+import ru.mephi.websocket.kafka.dto.receive.ChatActivityChangeIngoingMessage
 import ru.mephi.websocket.model.service.ActivityStatusService
 
 @Component
@@ -22,7 +22,7 @@ class KafkaListeners(
     @KafkaListener(topics = ["activity-from-presence-to-ws"], groupId = "websocket-service", containerFactory = "activityMessageListenerContainerFactory")
     suspend fun listener(message: String) {
         val chatActivityChangeIngoingMessage = objectMapper.readValue<ChatActivityChangeIngoingMessage>(message)
-        println("Listener received: email = ${chatActivityChangeIngoingMessage.email}, " +
+        println("Listener received: email = ${chatActivityChangeIngoingMessage.memberId}, " +
             " status = ${chatActivityChangeIngoingMessage.status}," +
                 " receiver = ${chatActivityChangeIngoingMessage.receiver} :)")
         activityStatusService.sendStatusUpdateNotification(chatActivityChangeIngoingMessage).awaitSingleOrNull()

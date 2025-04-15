@@ -22,6 +22,8 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.cloud:spring-cloud-starter-config")
+    implementation("org.springframework.boot:spring-boot-starter-data-redis-reactive")
+    implementation("org.springframework.kafka:spring-kafka")
 
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")

@@ -76,10 +76,16 @@ class RoutingConfiguration {
                     .uri("lb://message-handler-service:8091")
             }
             .route("notification_about_handled_action_with_message") { r ->
-                r.path(("/chats/{chatId}/messages/{messageId}"))
+                r.path("/chats/{chatId}/messages/{messageId}")
                     .and()
                     .method(HttpMethod.POST)
                     .uri("lb://message-handler-service:8091")
+            }
+            .route("active_users_in_chat") { r ->
+                r.path("/chats/{chatId}/active")
+                    .and()
+                    .method(HttpMethod.GET)
+                    .uri("lb://presence-service:8093")
             }
             .build()
     }

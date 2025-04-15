@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.model.dto.kafka.receive.ChatActivityChangeIngoingMessage
-import ru.mephi.websocket.model.dto.kafka.send.ChatActivityChangeOutgoingMessage
+import ru.mephi.websocket.kafka.dto.receive.ChatActivityChangeIngoingMessage
+import ru.mephi.websocket.kafka.dto.send.ChatActivityChangeOutgoingMessage
 import ru.mephi.websocket.model.mapper.ActivityStatusMapper
 import ru.mephi.websocket.model.service.ActivityStatusService
 import ru.mephi.websocket.model.service.SessionMap

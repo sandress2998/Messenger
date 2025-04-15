@@ -3,9 +3,9 @@ package ru.mephi.presence.model.service.impl
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import ru.mephi.presence.database.StatusRepository
-import ru.mephi.presence.model.dto.ChatActiveMembersRequest
 import ru.mephi.presence.model.dto.ChatActiveMembersResponse
 import ru.mephi.presence.model.service.StatusService
+import java.util.*
 
 
 @Service
@@ -13,18 +13,18 @@ class StatusServiceImpl(
     private val statusRepository: StatusRepository,
 ): StatusService {
 
-    override fun connectToChat(email: String, chatID: String): Mono<Void> {
-        return statusRepository.connectToChat(email, chatID)
+    override fun connectToChat(userId: UUID, chatId: UUID): Mono<Void> {
+        return statusRepository.connectToChat(userId, chatId)
     }
 
-    override fun disconnectFromChat(email: String, chatID: String): Mono<Void> {
-        return statusRepository.disconnectFromChat(email, chatID)
+    override fun disconnectFromChat(userId: UUID, chatId: UUID): Mono<Void> {
+        return statusRepository.disconnectFromChat(userId, chatId)
     }
 
-    override fun fetchActiveMembers(request: ChatActiveMembersRequest): Mono<ChatActiveMembersResponse> {
-        return statusRepository.fetchUsersExceptOne(request.requesting, request.chatID)
+    override fun fetchActiveMembers(userId: UUID, chatId: UUID): Mono<ChatActiveMembersResponse> {
+        return statusRepository.fetchUsersExceptOne(userId, chatId)
             .map { activeMembersList ->
-                ChatActiveMembersResponse(request.chatID, activeMembersList)
+                ChatActiveMembersResponse(chatId, activeMembersList)
             }
     }
 }

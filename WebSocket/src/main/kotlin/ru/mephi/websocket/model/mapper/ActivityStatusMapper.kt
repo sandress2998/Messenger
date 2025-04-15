@@ -1,10 +1,11 @@
 package ru.mephi.websocket.model.mapper
 
 import org.springframework.stereotype.Component
-import ru.mephi.websocket.model.dto.kafka.receive.ChatActivityChangeIngoingMessage
-import ru.mephi.websocket.model.dto.kafka.send.ChatActivityChangeOutgoingMessage
+import ru.mephi.websocket.kafka.dto.receive.ChatActivityChangeIngoingMessage
+import ru.mephi.websocket.kafka.dto.send.ChatActivityChangeOutgoingMessage
 import ru.mephi.websocket.model.dto.websocket.receive.ChatActivityChangeIngoingNotification
 import ru.mephi.websocket.model.dto.websocket.send.ChatActivityChangeOutgoingNotification
+import java.util.*
 
 @Component
 class ActivityStatusMapper {
@@ -12,8 +13,8 @@ class ActivityStatusMapper {
         message: ChatActivityChangeIngoingMessage
     ): ChatActivityChangeOutgoingNotification {
         val notification = ChatActivityChangeOutgoingNotification(
-            chatID = message.chatID,
-            email = message.email,
+            chatID = message.chatId,
+            memberId = message.memberId,
             status = message.status,
         )
         return notification
@@ -21,11 +22,11 @@ class ActivityStatusMapper {
 
     fun notificationAsMessage(
         notification: ChatActivityChangeIngoingNotification,
-        userWhoChangedStatus: String
+        userWhoChangedStatus: UUID
     ): ChatActivityChangeOutgoingMessage {
         val message = ChatActivityChangeOutgoingMessage(
-            chatID = notification.chatID,
-            email = userWhoChangedStatus,
+            chatId = notification.chatId,
+            userId = userWhoChangedStatus,
             status = notification.status
         )
         return message

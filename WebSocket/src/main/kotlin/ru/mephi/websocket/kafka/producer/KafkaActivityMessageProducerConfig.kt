@@ -9,7 +9,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.core.ProducerFactory
 import org.springframework.kafka.support.serializer.JsonSerializer
-import ru.mephi.websocket.model.dto.kafka.send.ChatActivityChangeOutgoingMessage
+import ru.mephi.websocket.kafka.dto.send.ChatActivityChangeOutgoingMessage
 
 @Configuration
 class KafkaActivityMessageProducerConfig {

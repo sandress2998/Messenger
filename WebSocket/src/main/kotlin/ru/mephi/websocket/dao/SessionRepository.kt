@@ -6,6 +6,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.websocket.property.SecurityProperties
 import java.time.Duration
+import java.util.*
 
 @Repository
 class SessionRepository(
@@ -16,25 +17,25 @@ class SessionRepository(
     private val jwtTTL = Duration.ofMinutes(securityProperties.jwtTimeoutInMinutes)
 
 
-    fun addSession(email: String, sessionId: String): Mono<Void> {
-        return reactiveSetOps.add("sessions:$email", sessionId)
+    fun addSession(userId: UUID, sessionId: String): Mono<Void> {
+        return reactiveSetOps.add("sessions:$userId", sessionId)
             .flatMap {
-                reactiveRedisTemplate.expire(email, jwtTTL)
+                reactiveRedisTemplate.expire(userId.toString(), jwtTTL)
             }
             .then()
     }
 
-    fun removeSession(email: String, sessionId: String): Mono<Void> {
-        return reactiveSetOps.remove("sessions:$email", sessionId)
+    fun removeSession(userId: UUID, sessionId: String): Mono<Void> {
+        return reactiveSetOps.remove("sessions:$userId", sessionId)
             .then()
     }
 
-    fun getAllSessions(email: String): Flux<String> {
-        return reactiveSetOps.members("sessions:$email")
+    fun getAllSessions(userId: UUID): Flux<String> {
+        return reactiveSetOps.members("sessions:$userId")
     }
 
-    fun removeAllSessions(email: String): Mono<Void> {
-        return reactiveSetOps.delete("sessions:$email")
+    fun removeAllSessions(userId: UUID): Mono<Void> {
+        return reactiveSetOps.delete("sessions:$userId")
             .then()
     }
 }

@@ -6,6 +6,7 @@ import ru.mephi.websocket.model.dto.websocket.receive.ChatActivityChangeIngoingN
 import ru.mephi.websocket.model.mapper.ActivityStatusMapper
 import ru.mephi.websocket.model.service.ActivityStatusService
 import ru.mephi.websocket.model.service.WebSocketNotificationProcessor
+import java.util.*
 
 @Service
 class WebSocketNotificationProcessorImpl(
@@ -14,10 +15,10 @@ class WebSocketNotificationProcessorImpl(
 ): WebSocketNotificationProcessor {
     override fun processActivityStatusNotification(
         notification: ChatActivityChangeIngoingNotification,
-        receiver: String
+        receiver: UUID
     ): Mono<Void> {
         println("Десериализовано в ChatActivityChangeIngoingNotification: " +
-                "chatID: ${notification.chatID}, status: ${notification.status}, receiver: $receiver")
+                "chatID: ${notification.chatId}, status: ${notification.status}, receiver: $receiver")
         val outgoingMessage = activityStatusMapper.notificationAsMessage(notification, receiver)
         return activityStatusService.sendStatusUpdateMessage(outgoingMessage)
     }

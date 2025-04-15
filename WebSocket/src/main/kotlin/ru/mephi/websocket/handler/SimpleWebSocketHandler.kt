@@ -14,6 +14,7 @@ import ru.mephi.websocket.model.dto.websocket.receive.BaseReceiveNotification
 import ru.mephi.websocket.model.dto.websocket.receive.ChatActivityChangeIngoingNotification
 import ru.mephi.websocket.model.service.SessionService
 import ru.mephi.websocket.model.service.WebSocketNotificationProcessor
+import java.util.*
 
 @Component
 class SimpleWebSocketHandler(
@@ -28,22 +29,27 @@ class SimpleWebSocketHandler(
         println("Connection could be establish")
 
         // Извлечение заголовка
-        val email = session.handshakeInfo.headers["X-Email"]?.firstOrNull()
-
-        if (email == null) {
-            println("Email is missing")
-            return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("Email is missing"))
+        val userId: UUID? = session.handshakeInfo.headers["X-UserId"]?.firstOrNull().let {
+            try {
+                UUID.fromString(it)
+            } catch (e: IllegalArgumentException) {
+                return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("UserId has incorrect format"))
+            }
         }
 
-        // Проверка и извлечение email из токена
-        session.attributes["email"] = email
+        if (userId == null) {
+            println("UserId is missing")
+            return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("UserId is missing"))
+        }
+
+        session.attributes["userId"] = userId
 
         val sessionId = session.id
 
-        println("Target connection established. Email: $email")
+        println("Target connection established. UserId: $userId")
 
         // Обработка сообщений
-        return sessionService.addSession(email, session)
+        return sessionService.addSession(userId, session)
             .doOnSuccess {
                 println("Successfully added session.")
             }
@@ -53,7 +59,7 @@ class SimpleWebSocketHandler(
             .then ( Mono.defer {
                 session.receive()
                     .doOnNext { notification ->
-                        println("Received message from $email: ${notification.payloadAsText}")
+                        println("Received message from $userId: ${notification.payloadAsText}")
                     }
                     .flatMap { notification ->
                         Mono.fromCallable {
@@ -68,7 +74,7 @@ class SimpleWebSocketHandler(
                             when (jsonNotification) {
                                 is ChatActivityChangeIngoingNotification -> {
                                     webSocketNotificationProcessor.processActivityStatusNotification(
-                                        jsonNotification, email
+                                        jsonNotification, userId
                                     )
                                 }
                                 else -> {
@@ -86,7 +92,7 @@ class SimpleWebSocketHandler(
             .then(session.close())
             .then( Mono.defer {
                 println("Removing session $sessionId")
-                sessionService.removeSession(email, sessionId)
+                sessionService.removeSession(userId, sessionId)
             } )
             .then()
             .onErrorResume { error ->
