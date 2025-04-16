@@ -1,13 +1,76 @@
 package ru.mephi.chatservice.repository
 
 import org.springframework.data.redis.core.ReactiveRedisTemplate
-import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.dto.ChatActivityChangeBroadcast
 import ru.mephi.chatservice.property.SecurityProperties
 import java.time.Duration
+import java.util.*
+
+
+@Repository
+class ActivityRepository (
+    private val redisTemplate: ReactiveRedisTemplate<String, String>,
+    private val chatMembersRepository: ChatMembersRepository,
+    private val securityProperties: SecurityProperties
+) {
+    val redisOpsForList = redisTemplate.opsForList()
+    val timeToLiveInMinutes: Duration = Duration.ofMinutes(securityProperties.jwtTimeoutInMinutes)
+
+    fun addToChat(userId: UUID, chatId: UUID): Mono<Void> {
+        val key = "chat_activity:$chatId"
+        return redisOpsForList.range(key, 0, -1)
+            .collectList()
+            .flatMap { activeUsersInChat ->
+                if (!activeUsersInChat.contains(userId.toString())) {
+                    redisOpsForList.rightPush("chat_activity:$chatId", userId.toString())
+                } else {
+                    Mono.empty()
+                }
+            }
+            .then(updateTTL(key))
+    }
+
+    fun deleteFromChat(userId: UUID, chatId: UUID): Mono<Void> {
+        val key = "chat_activity:$chatId"
+        return redisOpsForList.range(key, 0, -1)
+            .collectList()
+            .flatMap { activeUsersInChat ->
+                if (activeUsersInChat.size == 1) {
+                    redisOpsForList.delete(key)
+                } else {
+                    redisOpsForList.remove(key, 1, userId.toString())
+                }
+            }
+            .then()
+    }
+
+    fun getActiveChatMembers(chatId: UUID): Flux<UUID> {
+        val key = "chat_activity:$chatId"
+        return redisOpsForList.range(key, 0, -1)
+            .map { activeMember -> UUID.fromString(activeMember)  }
+    }
+
+    fun isMemberActive(userId: UUID, chatId: UUID): Mono<Boolean> {
+        val key = "chat_activity:$chatId"
+        return redisOpsForList.indexOf(key, userId.toString())
+            .map { index ->
+                index.toInt() != -1
+            }
+    }
+
+    fun deleteChat(chatId: UUID): Mono<Void> {
+        val key = "chat_activity:$chatId"
+        return redisOpsForList.delete(key)
+            .then()
+    }
+
+    private fun updateTTL(key: String): Mono<Void> {
+        return redisTemplate.expire(key, timeToLiveInMinutes)
+            .then()
+    }
+}
 
 /*
 @Repository
@@ -132,4 +195,5 @@ class ActivityRepository (
         return redisTemplate.expire(key, timeToLiveInMinutes)
     }
 }
-*/
+/*
+ */

@@ -1,7 +1,7 @@
 package ru.mephi.websocket.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.model.dto.websocket.receive.ChatActivityChangeIngoingNotification
+import ru.mephi.websocket.dto.websocket.receive.ChatActivityChangeIngoingNotification
 import java.util.*
 
 interface WebSocketNotificationProcessor {

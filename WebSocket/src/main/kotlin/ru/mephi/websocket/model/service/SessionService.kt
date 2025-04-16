@@ -13,4 +13,8 @@ interface SessionService {
     fun getAllSessions(userId: UUID): Flux<String>
 
     fun removeAllSessions(userId: UUID): Mono<Void>
+
+    fun doSessionsExist(userId: UUID): Mono<Boolean>
+
+    fun sendNotification(userId: UUID, message: Any): Mono<Void>
 }

@@ -19,7 +19,7 @@ class KafkaListeners(
         .build()
 
 
-    @KafkaListener(topics = ["activity-from-ws-to-presence"], groupId = "presence-service", containerFactory = "messageKafkaListenerContainerFactory")
+    @KafkaListener(topics = ["activity-status-change"], groupId = "presence-service", containerFactory = "messageKafkaListenerContainerFactory")
     fun chatActivityListener(message: String): Mono<Void> {
         // Десериализуем JSON
         val chatActivityChangeEvent = objectMapper.readValue<ChatActivityChangeEvent>(message)

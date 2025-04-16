@@ -3,9 +3,6 @@ package ru.mephi.chatservice.repository
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.ActivityStatus
-import ru.mephi.chatservice.models.dto.UserInfo
-import ru.mephi.chatservice.models.dto.UserInfoExpanded
 import java.util.*
 
 // хоть и есть user-service (микросервис), здесь элементарные операции по работе пользователями

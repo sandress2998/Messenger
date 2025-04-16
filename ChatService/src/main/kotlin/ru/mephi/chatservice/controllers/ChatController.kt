@@ -3,10 +3,8 @@ package ru.mephi.chatservice.controllers
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.ChatRole
-import ru.mephi.chatservice.models.dto.*
+import ru.mephi.chatservice.models.dto.rest.*
 import ru.mephi.chatservice.models.entity.Chat
-import ru.mephi.chatservice.models.entity.ChatMember
 import ru.mephi.chatservice.service.ChatService
 import java.util.*
 
@@ -19,7 +17,7 @@ class ChatController(
     // Возможно, нужно изменить URL для удобности работы с gateway
     // Нужно добавить пагинацию
     @GetMapping
-    fun getChatsForUser(@RequestHeader("X-UserId") userId: UUID): Flux<ChatInfoResponse> {
+    fun getChatsForUser(@RequestHeader("X-UserId") userId: UUID): Flux<ChatInfo> {
         return chatService.getChatsInfoByUserId(userId)
     }
 
@@ -54,7 +52,7 @@ class ChatController(
     fun getMembersForChat(
         @RequestHeader("X-UserId") userId: UUID,
         @PathVariable("chatId") chatId: UUID
-    ): Flux<MemberInfoResponse> {
+    ): Flux<MemberInfo> {
         return chatService.getChatMembersByChatId(chatId, userId)
     }
 
@@ -63,7 +61,7 @@ class ChatController(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
         @PathVariable("chatId") chatId: UUID,
         @RequestBody memberCreationRequest: MemberCreationRequest
-    ): Mono<MemberInfoResponse> {
+    ): Mono<MemberInfo> {
         return chatService.addMemberToChat(
             memberCreationRequest, chatId, userInitiatorId
         )
@@ -95,7 +93,7 @@ class ChatController(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
         @PathVariable("chatId") chatId: UUID,
         @RequestBody creationRequest: MemberFromUserCreationRequest
-    ): Mono<MemberInfoResponse> {
+    ): Mono<MemberInfo> {
         return chatService.addUserToChat (
             creationRequest, chatId, userInitiatorId
         )

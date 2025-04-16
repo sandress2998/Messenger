@@ -10,15 +10,19 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.model.dto.websocket.receive.BaseReceiveNotification
-import ru.mephi.websocket.model.dto.websocket.receive.ChatActivityChangeIngoingNotification
+import ru.mephi.websocket.dto.kafka.send.ActivityChangeOutgoingMessage
+import ru.mephi.websocket.dto.websocket.receive.BaseReceiveNotification
+import ru.mephi.websocket.dto.websocket.receive.ChatActivityChangeIngoingNotification
+import ru.mephi.websocket.model.service.ActivityStatusService
 import ru.mephi.websocket.model.service.SessionService
 import ru.mephi.websocket.model.service.WebSocketNotificationProcessor
+import ru.mephi.websocket.shared.enums.ActivityStatus
 import java.util.*
 
 @Component
 class SimpleWebSocketHandler(
     private val sessionService: SessionService,
+    private val activityStatusService: ActivityStatusService,
     private val webSocketNotificationProcessor: WebSocketNotificationProcessor
 ): WebSocketHandler {
     private val objectMapper: JsonMapper = jacksonMapperBuilder()
@@ -56,45 +60,56 @@ class SimpleWebSocketHandler(
             .doOnError { error ->
                 println("Error during Mono.zip: ${error.message}")
             }
-            .then ( Mono.defer {
-                session.receive()
-                    .doOnNext { notification ->
-                        println("Received message from $userId: ${notification.payloadAsText}")
+            .then (
+                activityStatusService.sendStatusUpdateMessage(
+                    ActivityChangeOutgoingMessage(userId, ActivityStatus.ACTIVE)
+                )
+                .then(session.receive()
+                .doOnNext { notification ->
+                    println("Received message from $userId: ${notification.payloadAsText}")
+                }
+                .flatMap { notification ->
+                    Mono.fromCallable {
+                        objectMapper.readValue<BaseReceiveNotification>(notification.payloadAsText)
                     }
-                    .flatMap { notification ->
-                        Mono.fromCallable {
-                            objectMapper.readValue<BaseReceiveNotification>(notification.payloadAsText)
-                        }
-                        .onErrorResume { error ->
-                            // Обработка ошибки десериализации
-                            println("Failed to deserialize message: ${error.message}")
-                            Mono.empty() // Продолжаем обработку следующих сообщений
-                        }
-                        .flatMap { jsonNotification ->
-                            when (jsonNotification) {
-                                is ChatActivityChangeIngoingNotification -> {
-                                    webSocketNotificationProcessor.processActivityStatusNotification(
-                                        jsonNotification, userId
-                                    )
-                                }
-                                else -> {
-                                    println("Нет подходящего класса для json-десериализации")
-                                    Mono.empty()
-                                }
+                    .onErrorResume { error ->
+                        // Обработка ошибки десериализации
+                        println("Failed to deserialize message: ${error.message}")
+                        Mono.empty() // Продолжаем обработку следующих сообщений
+                    }
+                    .flatMap { jsonNotification ->
+                        when (jsonNotification) {
+                            is ChatActivityChangeIngoingNotification -> {
+                                webSocketNotificationProcessor.processActivityStatusNotification(
+                                    jsonNotification, userId
+                                )
                             }
-                            .then(
-                                session.send(Flux.just(session.textMessage("Echo: ${notification.payloadAsText}")))
-                            )
+                            else -> {
+                                println("Нет подходящего класса для json-десериализации")
+                                Mono.empty()
+                            }
                         }
+                        .then(
+                            session.send(Flux.just(session.textMessage("Echo: ${notification.payloadAsText}")))
+                        )
                     }
-                    .then()
-            } )
+                }
+                .then()
+            ))
             .then(session.close())
             .then( Mono.defer {
                 println("Removing session $sessionId")
                 sessionService.removeSession(userId, sessionId)
             } )
-            .then()
+            .then(sessionService.doSessionsExist(userId)
+                .flatMap { exist ->
+                    if (!exist) {
+                        activityStatusService.sendStatusUpdateMessage(ActivityChangeOutgoingMessage(userId, ActivityStatus.INACTIVE))
+                    } else {
+                        Mono.empty()
+                    }
+                }
+            )
             .onErrorResume { error ->
                 println("Error during session removal or status update: ${error.message}")
                 session.close()
