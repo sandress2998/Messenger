@@ -1,4 +1,4 @@
-package ru.mephi.presence.kafka.consumer
+package ru.mephi.presence.model.service
 
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
@@ -7,8 +7,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
-import ru.mephi.presence.kafka.dto.ChatActivityChangeEvent
-import ru.mephi.presence.model.service.StatusMessaging
+import ru.mephi.presence.model.dto.kafka.ActivityChangeEvent
 
 @Component
 class KafkaListeners(
@@ -22,10 +21,10 @@ class KafkaListeners(
     @KafkaListener(topics = ["activity-status-change"], groupId = "presence-service", containerFactory = "messageKafkaListenerContainerFactory")
     fun chatActivityListener(message: String): Mono<Void> {
         // Десериализуем JSON
-        val chatActivityChangeEvent = objectMapper.readValue<ChatActivityChangeEvent>(message)
+        val activityChangeEvent = objectMapper.readValue<ActivityChangeEvent>(message)
 
-        println("Received message: $chatActivityChangeEvent")
-        return statusMessaging.handleChatActivityMessage(chatActivityChangeEvent)
+        println("Received message: $activityChangeEvent")
+        return statusMessaging.handleChatActivityMessage(activityChangeEvent)
     }
 }
 

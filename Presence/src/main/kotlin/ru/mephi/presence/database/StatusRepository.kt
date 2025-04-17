@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.presence.model.ActivityStatus
-import ru.mephi.presence.kafka.dto.ChatActivityChangeBroadcast
 import ru.mephi.presence.property.SecurityProperties
 import java.time.Duration
 import java.util.UUID
@@ -15,123 +14,28 @@ import java.util.UUID
 @Repository
 class StatusRepository(
     private val redisTemplate: ReactiveRedisTemplate<String, String>,
-    private val messageKafkaTemplate: KafkaTemplate<String, ChatActivityChangeBroadcast>,
     private val securityProperties: SecurityProperties
 ) {
-    val redisOpsForList = redisTemplate.opsForList()
     val timeToLiveInMinutes: Duration = Duration.ofMinutes(securityProperties.jwtTimeoutInMinutes)
 
-
-    fun connectToChat(userId: UUID, chatId: UUID): Mono<Void> {
-        return addChatToChatList(userId, chatId) // Добавляем чат в список пользователя
-            .then(checkIfUserIsInChat(userId, chatId)) // Проверяем, есть ли пользователь в чате
-            .flatMap { isContained ->
-                if (!isContained) {
-                    println("Trying to add user $userId to chat $chatId")
-                    addUserToChat(userId, chatId) // Добавляем пользователя в чат
-                   .then(notifyChatMembers(userId, chatId, ActivityStatus.ACTIVE)) // Уведомляем участников чата
-                } else {
-                    Mono.empty() // Если пользователь уже в чате, ничего не делаем
-                }
-            }
-            .then(updateTTL("chat_members:$chatId")) // Обновляем TTL для списка участников чата
-            .then() // Завершаем поток
-    }
-
-    fun disconnectFromChat(userId: UUID, chatId: UUID): Mono<Void> {
-        return redisOpsForList.range("user_chats:$userId", 0, -1)
-            .collectList()
-            .map { list -> list.count { UUID.fromString(it) == chatId } }
-            .flatMap { countOccurrences ->
-                if (countOccurrences == 1) {
-                    removeChatFromChatList(userId, chatId)
-                        .then(removeUserFromChat(userId, chatId))
-                } else if (countOccurrences > 1) {
-                    removeChatFromChatList(userId, chatId)
-                } else {
-                    Mono.empty()
-                }
-            }
-    }
-
-    fun fetchUsersExceptOne(userToExcept: UUID, chatId: UUID): Mono<List<UUID>> {
-        return redisOpsForList.range("chat_members:$chatId", 0, -1)
-            .collectList()
-            .map { fetchedList -> 
-                val list = fetchedList.map { userId -> UUID.fromString(userId) }
-                list.filter { userId -> userId != userToExcept } 
-            }
-    }
-
-    // Проверяем, есть ли пользователь в чате
-    private fun checkIfUserIsInChat(userId: UUID, chatId: UUID): Mono<Boolean> {
-        return redisOpsForList.range("chat_members:$chatId", 0, -1)
-            .collectList()
-            .map { list -> list.contains(userId.toString()) }
-    }
-
-    // Добавляем пользователя в чат
-    private fun addUserToChat(userId: UUID, chatId: UUID): Mono<Long> {
-        return redisOpsForList.rightPush("chat_members:$chatId", userId.toString())
-    }
-
-    // Уведомляем участников чата об изменении статуса пользователя
-    private fun notifyChatMembers(userId: UUID, chatId: UUID, status: ActivityStatus): Mono<Void> {
-        return fetchUsersExceptOne(userId, chatId) // Получаем список пользователей для уведомления
-            .flatMapMany { Flux.fromIterable(it) } // Преобразуем List в Flux
-            .flatMap { userToNotify: UUID ->
-                val messageToNotify = ChatActivityChangeBroadcast(
-                    chatId, userId, status, userToNotify
-                )
-                println("Trying to notify $userToNotify about activity change")
-                Mono.fromFuture(messageKafkaTemplate.send("activity-from-presence-to-ws", messageToNotify))
-            }
-            .then() // Завершаем поток уведомлений
-    }
-
-    private fun addChatToChatList(userId: UUID, chatId: UUID): Mono<Void> {
-        return redisOpsForList.rightPush("user_chats:$userId", chatId.toString())
+    fun setActive(userId: UUID): Mono<Void> {
+        val key = "user_activity:$userId"
+        return redisTemplate.opsForValue().set(key, ActivityStatus.ACTIVE.toString())
+            .then(redisTemplate.expire(key, timeToLiveInMinutes))
             .then()
     }
 
-    private fun removeChatFromChatList(userId: UUID, chatId: UUID): Mono<Void> {
-        return redisOpsForList.remove("user_chats:$userId", 1, chatId.toString())
-            .flatMap {
-                redisOpsForList.size("user_chats:$userId")
-            }
-            .flatMap { size ->
-                if (size?.toInt() == 0) {
-                    redisTemplate.delete("user_chats:$userId")
-                } else {
-                    Mono.empty()
-                }
-            }
+    fun setInactive(userId: UUID): Mono<Void> {
+        val key = "user_activity:$userId"
+        return redisTemplate.opsForValue().delete(key)
             .then()
     }
 
-    private fun removeUserFromChat(userId: UUID, chatId: UUID): Mono<Void> {
-        return redisOpsForList.remove("chat_members:$chatId", 1, userId.toString()) // Удаляем пользователя из чата
-            .flatMap { removedCount ->
-                if (removedCount > 0) {
-                    notifyChatMembers(userId, chatId, ActivityStatus.INACTIVE) // Уведомляем участников чата
-                        .then(checkAndDeleteChatIfEmpty(chatId)) // Проверяем, пуст ли чат, и удаляем ключ, если нужно
-                } else {
-                    Mono.empty() // Если пользователь не был удален, ничего не делаем
-                }
-            }
-    }
-
-    // Проверяем, пуст ли чат, и удаляем ключ, если нужно
-    private fun checkAndDeleteChatIfEmpty(chatId: UUID): Mono<Void> {
-        return redisOpsForList.size("chat_members:$chatId")
-            .flatMap { size ->
-                if (size.toInt() == 0) {
-                    redisTemplate.delete("chat_members:$chatId") // Удаляем ключ, если список пуст
-                        .then()
-                } else {
-                    Mono.empty() // Если список не пуст, ничего не делаем
-                }
-            }
+    fun isActive(userId: UUID): Mono<Boolean> {
+        val key = "user_activity:$userId"
+        return redisTemplate.opsForValue().get(key)
+            .map { true }
+            .switchIfEmpty(Mono.just(false))
     }
 
     private fun updateTTL(key: String): Mono<Boolean> {

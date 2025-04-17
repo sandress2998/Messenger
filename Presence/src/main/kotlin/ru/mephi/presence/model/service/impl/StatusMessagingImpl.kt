@@ -3,7 +3,7 @@ package ru.mephi.presence.model.service.impl
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import ru.mephi.presence.model.ActivityStatus
-import ru.mephi.presence.kafka.dto.ChatActivityChangeEvent
+import ru.mephi.presence.model.dto.kafka.ActivityChangeEvent
 import ru.mephi.presence.model.service.StatusMessaging
 import ru.mephi.presence.model.service.StatusService
 
@@ -12,17 +12,16 @@ import ru.mephi.presence.model.service.StatusService
 class StatusMessagingImpl(
     private val statusService: StatusService,
 ): StatusMessaging {
-    override fun handleChatActivityMessage(message: ChatActivityChangeEvent): Mono<Void> {
-        val chatId = message.chatId
+    override fun handleChatActivityMessage(message: ActivityChangeEvent): Mono<Void> {
         val userId = message.userId
         val status = message.status
 
         return when (status) {
             ActivityStatus.ACTIVE -> {
-                statusService.connectToChat(userId, chatId)
+                statusService.setActive(userId)
             }
             ActivityStatus.INACTIVE -> {
-                statusService.disconnectFromChat(userId, chatId)
+                statusService.setInactive(userId)
             }
         }
     }

@@ -12,4 +12,11 @@ class WebClients {
             .baseUrl("http://message-handler-service:8091")
             .build()
     }
+
+    @Bean
+    fun presenceServiceWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl("http://presence-service:8093")
+            .build()
+    }
 }

@@ -18,18 +18,23 @@ class ActivityRepository (
     val redisOpsForList = redisTemplate.opsForList()
     val timeToLiveInMinutes: Duration = Duration.ofMinutes(securityProperties.jwtTimeoutInMinutes)
 
-    fun addToChat(userId: UUID, chatId: UUID): Mono<Void> {
+    fun addToChat(userId: UUID, chatId: UUID): Mono<Boolean> {
         val key = "chat_activity:$chatId"
         return redisOpsForList.range(key, 0, -1)
             .collectList()
             .flatMap { activeUsersInChat ->
+                val isAdded: Boolean
                 if (!activeUsersInChat.contains(userId.toString())) {
+                    isAdded = true
                     redisOpsForList.rightPush("chat_activity:$chatId", userId.toString())
                 } else {
+                    isAdded = false
                     Mono.empty()
                 }
+                .then(updateTTL(key))
+                .thenReturn(isAdded)
             }
-            .then(updateTTL(key))
+
     }
 
     fun deleteFromChat(userId: UUID, chatId: UUID): Mono<Void> {

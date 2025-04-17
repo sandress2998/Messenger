@@ -106,18 +106,22 @@ class ChatService(
                 if (!isMember) {
                     Flux.error(AccessDeniedException(AccessDeniedException.Cause.NOT_MEMBER))
                 } else {
-                    chatMembersRepository.getChatMembersByChatId(chatId)
-                        .flatMap { chatMember: ChatMember ->
-                            userRepository.getUsernameById(chatMember.userId)
-                                // пропускаем тех пользователей, которых не нашли?
-                                //.filter { username -> username != null}
-                                .map { username ->
-                                    MemberInfo(chatMember.id!!, username!!, chatMember.role, ActivityStatus.ACTIVE)
+                    activityService.getActiveMembers(chatId)
+                        .flatMapMany { activeMembers ->
+                            chatMembersRepository.getChatMembersByChatId(chatId)
+                                .flatMap { chatMember: ChatMember ->
+                                    val userId = chatMember.userId
+                                    userRepository.getUsernameById(userId)
+                                        .map { username ->
+                                            val activityStatus = when (activeMembers.contains(userId)) {
+                                                true -> ActivityStatus.ACTIVE
+                                                false -> ActivityStatus.INACTIVE
+                                            }
+                                            MemberInfo(chatMember.id!!, username!!, chatMember.role, activityStatus)
+                                        }
                                 }
-                                .switchIfEmpty(
-                                    Mono.just(MemberInfo(chatMember.id!!, "DELETED_ACCOUNT", chatMember.role, ActivityStatus.INACTIVE))
-                                )
                         }
+
                 }
             }
     }
@@ -146,13 +150,23 @@ class ChatService(
                     }
             }
             .flatMap { member ->
-                userRepository.getUsernameById(member.userId)
+                val memberId = member.id!!
+                val role = member.role
+                val userId = member.userId
+                userRepository.getUsernameById(userId)
                     .switchIfEmpty(Mono.error(NotFoundException("User not found")))
                     .flatMap { username ->
-                        val info = MemberInfo(member.id!!, username!!, member.role, ActivityStatus.ACTIVE)
-                        activityService.addToChat(member.userId, chatId)
-                            .then(chatNotificationService.notifyAboutChatMemberAction(chatId, member.id, ChatMemberAction.NEW, info))
-                            .thenReturn(info)
+                        activityService.getUserActivityStatus(userId)
+                            .flatMap { activityStatus ->
+                                val info = MemberInfo(memberId, username!!, role, activityStatus)
+                                println("Activity status of user $userId is $activityStatus")
+                                when (activityStatus) {
+                                    ActivityStatus.ACTIVE -> activityService.addToChat(member.userId, chatId)
+                                    ActivityStatus.INACTIVE -> Mono.empty()
+                                }
+                                .then(chatNotificationService.notifyAboutChatMemberAction(chatId, member.id, ChatMemberAction.NEW, info))
+                                .thenReturn(info)
+                            }
                     }
 
             }
@@ -217,11 +231,13 @@ class ChatService(
                         .flatMap { savedChatMember ->
                             val memberId = savedChatMember.id!!
                             messageHandlerService.createMessageReadReceipt(userId, chatId)
-                                //.then(activityService.getActivityStatus(userId, chatId)) переделать ф-цию getActivityStatus
-                                .then(Mono.just(ActivityStatus.ACTIVE))
+                                .then(activityService.getUserActivityStatus(userId))
                                     .flatMap { activityStatus ->
                                         val memberInfo = MemberInfo(memberId, username, role, activityStatus)
-                                        activityService.addToChat(userId, chatId)
+                                        when (activityStatus) {
+                                            ActivityStatus.ACTIVE -> activityService.addToChat(userId, chatId)
+                                            ActivityStatus.INACTIVE -> Mono.empty()
+                                        }
                                         .then(chatNotificationService.notifyAboutChatMemberAction(chatId, memberId, ChatMemberAction.NEW, memberInfo))
                                         .thenReturn(memberInfo)
                                     }

@@ -12,13 +12,15 @@ import ru.mephi.chatservice.models.dto.kafka.ActivityChangeOutgoingMessage
 import ru.mephi.chatservice.models.entity.ChatMember
 import ru.mephi.chatservice.repository.ActivityRepository
 import ru.mephi.chatservice.repository.ChatMembersRepository
+import ru.mephi.chatservice.webclient.PresenceService
 import java.util.*
 
 @Service
 class ActivityService (
     private val activityRepository: ActivityRepository,
     private val chatMembersRepository: ChatMembersRepository,
-    private val kafkaTemplate: KafkaTemplate<String, ActivityChangeOutgoingMessage>
+    private val kafkaTemplate: KafkaTemplate<String, ActivityChangeOutgoingMessage>,
+    private val presenceService: PresenceService
 ) {
     fun handleActivityChangeMessage(message: ActivityChangeIngoingMessage): Mono<Void> {
         return when (message.status) {
@@ -41,28 +43,16 @@ class ActivityService (
         return activityRepository.deleteFromChat(userId, chatId)
     }
 
-    fun addToChat(userId: UUID, chatId: UUID): Mono<Void> {
+    fun addToChat(userId: UUID, chatId: UUID): Mono<Boolean> {
         return activityRepository.addToChat(userId, chatId)
     }
 
-/*
-    fun addToChat(userId: UUID, chatId: UUID): Mono<Void> {
-        return isUserActive(userId)
-            .flatMap { isActive ->
-                if (isActive) {
-                    activityRepository.addToChat(userId, chatId)
-                } else {
-                    Mono.empty()
-                }
-            }
-    }
-*/
     fun deleteChat(chatId: UUID): Mono<Void> {
         return activityRepository.deleteChat(chatId)
     }
 
     // может быть случай, что пользователь вообще не имеет чатов. Тогда надо сделать запрос на presence-service
-    fun isUserActive(userId: UUID): Mono<Boolean> {
+    fun getUserActivityStatus(userId: UUID): Mono<ActivityStatus> {
         return chatMembersRepository.findRandomChatIdsByUserId(userId)
             .flatMap { chatId ->
                 activityRepository.getActiveChatMembers(chatId)
@@ -70,7 +60,23 @@ class ActivityService (
                     .map { list -> list.contains(userId) }
             }
             .collectList()
-            .map { list -> list.contains(true) }
+            .flatMap { list ->
+                if (list.size == 1) {
+                    println("we're sending a request if user is active")
+                    presenceService.isUserActive(userId)
+                } else {
+                    println("size = ${list.size}")
+                    when (list.contains(true)) {
+                        true -> Mono.just(ActivityStatus.ACTIVE)
+                        false -> Mono.just(ActivityStatus.INACTIVE)
+                    }
+                }
+            }
+    }
+
+    fun getActiveMembers(chatId: UUID): Mono<List<UUID>> {
+        return activityRepository.getActiveChatMembers(chatId)
+            .collectList()
     }
 
     private fun handleActiveUser(userId: UUID): Mono<Void> {
@@ -78,8 +84,15 @@ class ActivityService (
             .flatMap { chatMember: ChatMember ->
                 val chatId = chatMember.chatId
                 val memberId = chatMember.id!!
-                notifyMembersAboutActivityChange(chatId, memberId, ActivityStatus.ACTIVE)
-                    .then(activityRepository.addToChat(userId, chatId))
+                    activityRepository.addToChat(userId, chatId)
+                        .flatMap { isAdded ->
+                            if (isAdded) {
+                                notifyMembersAboutActivityChange(chatId, memberId, ActivityStatus.ACTIVE)
+                                .then()
+                            } else {
+                                Mono.empty()
+                            }
+                        }
             }
             .then()
     }

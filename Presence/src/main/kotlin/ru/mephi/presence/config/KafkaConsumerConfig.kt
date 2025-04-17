@@ -1,4 +1,4 @@
-package ru.mephi.presence.kafka.consumer
+package ru.mephi.presence.config
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.serialization.StringDeserializer
