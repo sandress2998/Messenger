@@ -4,13 +4,12 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.messagehandler.models.MessageAction
+import ru.mephi.messagehandler.models.dto.rest.request.MessageCreateDTO
+import ru.mephi.messagehandler.models.dto.rest.request.MessageSearchDTO
+import ru.mephi.messagehandler.models.dto.rest.request.MessageUpdateDTO
+import ru.mephi.messagehandler.models.dto.rest.response.RequestResult
+import ru.mephi.messagehandler.models.dto.rest.response.UnreadChanges
 import ru.mephi.messagehandler.models.entity.Message
-import ru.mephi.messagehandler.models.dto.request.MessageCreateDTO
-import ru.mephi.messagehandler.models.dto.request.MessageSearchDTO
-import ru.mephi.messagehandler.models.dto.request.MessageUpdateDTO
-import ru.mephi.messagehandler.models.dto.response.RequestResult
-import ru.mephi.messagehandler.models.dto.response.UnreadChanges
-import ru.mephi.messagehandler.models.entity.MessageStatus
 import ru.mephi.messagehandler.service.MessageReadReceiptService
 import ru.mephi.messagehandler.service.MessageService
 import java.util.*
@@ -29,8 +28,6 @@ class MessageController(
         return messageService.getMessagesBefore(userId, chatId, startMessageId)
     }
 
-    // изменение сообщения, удаление сообщения - это не через REST API
-    // НО! для тестирования пусть будет пока REST API
     @PatchMapping("/chats/{chatId}/messages/{messageId}")
     fun updateMessage(
         @RequestHeader("X-UserId") userId: UUID,
@@ -41,7 +38,6 @@ class MessageController(
         return messageService.updateMessage(userId, chatId, messageId, updatedMessage)
     }
 
-    // Для тестирования пусть будет пока REST API
     @DeleteMapping("/chats/{chatId}/messages/{messageId}")
     fun deleteMessage(
         @RequestHeader("X-UserId") userId: UUID,
@@ -67,31 +63,6 @@ class MessageController(
     ): Flux<Message> {
         return messageService.searchMessages(userId, messageSearchDTO)
     }
-
-    /*
-    @DeleteMapping("/chats/{chatId}/messages")
-    fun deleteAllMessages(
-        @RequestHeader("X-UserId") userId: UUID,
-        @PathVariable chatId: UUID
-    ): Mono<RequestResult> {
-        return messageService.deleteAllMessages(userId, chatId)
-    }
-    */
-
-    /* Теперь это лишняя функция
-    @PatchMapping("/chats/{chatId}/messages/{messageId}/status/{status}")
-    fun updateMessageStatus(
-        @RequestHeader("X-UserId") userId: UUID,
-        @PathVariable chatId: UUID,
-        @PathVariable messageId: UUID,
-        @PathVariable status: MessageStatus
-    ): Mono<RequestResult> {
-        return messageService.markAsViewed(userId, chatId, messageId)
-    }
-     */
-
-    // ЗДЕСЬ ЗАКАНЧИВАЮТСЯ ПРОТЕСТИРОВАННЫЕ ФУНКЦИИ
-    // И начинаются нетоптаные тропы...
 
     @PostMapping("/chats/{chatId}/users")
     fun createMessageReadReceipt(
@@ -124,7 +95,6 @@ class MessageController(
         return messageService.getUnreadChanges(userId, chatId)
     }
 
-    // это еще не добавлено
     @PostMapping("/chats/{chatId}/messages/{messageId}")
     fun markAsHandled(
         @RequestHeader("X-UserId") userId: UUID,

@@ -3,9 +3,7 @@ package ru.mephi.messagehandler.config
 import org.bson.types.Binary
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.Converter
-import org.springframework.core.convert.converter.GenericConverter
 import org.springframework.data.convert.ReadingConverter
 import org.springframework.data.convert.WritingConverter
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions

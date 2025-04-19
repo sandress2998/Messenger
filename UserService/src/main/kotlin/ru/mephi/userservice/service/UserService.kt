@@ -12,7 +12,7 @@ import ru.mephi.userservice.model.entity.User
 import ru.mephi.userservice.model.exception.FailureResponse
 import ru.mephi.userservice.repository.UserRepository
 import ru.mephi.userservice.webclient.AuthService
-import java.util.UUID
+import java.util.*
 
 
 @Service
@@ -63,9 +63,5 @@ class UserService(
             .switchIfEmpty {
                 Mono.error(FailureResponse("User wasn't found"))
             }
-    }
-
-    fun getUsers(): Flux<User> {
-        return userRepository.findAll()
     }
 }

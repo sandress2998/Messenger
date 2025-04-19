@@ -268,10 +268,10 @@ class ChatService(
             .`as`(transactionalOperator::transactional)
     }
 
-    fun getUserRoleInChat(chatId: UUID, userId: UUID): Mono<UserRoleInChat> {
+    fun getChatMemberId(chatId: UUID, userId: UUID): Mono<ChatMemberInfo> {
         return chatMembersRepository.getChatMemberByChatIdAndUserId(chatId, userId)
-            .map { member -> UserRoleInChat(member.role) }
-            .switchIfEmpty( Mono.just(UserRoleInChat(ChatRole.NOT_MEMBER)) )
+            .map { member -> ChatMemberInfo(member.id!!) }
+            .switchIfEmpty( Mono.error(NotFoundException("User is not member of chat $chatId")) )
     }
 
     fun getChatsId(userId: UUID): Flux<ChatId> {

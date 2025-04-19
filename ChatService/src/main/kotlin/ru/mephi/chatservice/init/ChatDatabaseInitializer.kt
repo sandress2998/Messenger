@@ -1,10 +1,8 @@
 package ru.mephi.chatservice.init
 
 import jakarta.annotation.PostConstruct
-import ru.mephi.chatservice.models.ChatRole
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Component
-import java.util.*
 
 
 @Component

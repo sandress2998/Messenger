@@ -9,6 +9,7 @@ import reactor.core.publisher.Mono
 import ru.mephi.chatservice.models.ActivityStatus
 import ru.mephi.chatservice.models.dto.kafka.ActivityChangeIngoingMessage
 import ru.mephi.chatservice.models.dto.kafka.ActivityChangeOutgoingMessage
+import ru.mephi.chatservice.models.dto.rest.UserId
 import ru.mephi.chatservice.models.entity.ChatMember
 import ru.mephi.chatservice.repository.ActivityRepository
 import ru.mephi.chatservice.repository.ChatMembersRepository
@@ -78,6 +79,12 @@ class ActivityService (
         return activityRepository.getActiveChatMembers(chatId)
             .collectList()
     }
+
+    fun getActiveUsersInChat(chatId: UUID): Flux<UserId> {
+        return activityRepository.getActiveChatMembers(chatId)
+            .map { UserId(it) }
+    }
+
 
     private fun handleActiveUser(userId: UUID): Mono<Void> {
         return chatMembersRepository.getChatMembersByUserId(userId)

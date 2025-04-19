@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono
 import ru.mephi.websocket.dao.SessionRepository
 import ru.mephi.websocket.model.service.SessionMap
 import ru.mephi.websocket.model.service.SessionService
-import java.util.UUID
+import java.util.*
 
 @Service
 class SessionServiceImpl(

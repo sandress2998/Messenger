@@ -9,26 +9,33 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.messagehandler.models.exception.FailureResult
+import ru.mephi.messagehandler.models.exception.NotFoundException
+import ru.mephi.messagehandler.models.responce.ErrorResponse
 import ru.mephi.messagehandler.webclient.dto.ChatId
-import ru.mephi.messagehandler.webclient.dto.UserDataInChat
+import ru.mephi.messagehandler.webclient.dto.MemberId
+import ru.mephi.messagehandler.webclient.dto.UserId
 import java.util.*
 
 @Service
 class ChatService (
     private val chatServiceWebClient: WebClient
 ) {
-    fun getUserInChat(chatId: UUID, userId: UUID): Mono<UserDataInChat> {
+    fun getChatMemberInfo(chatId: UUID, userId: UUID): Mono<UUID> {
         return chatServiceWebClient.get()
-            .uri("/chats/{chatId}/users", chatId)
+            .uri("/chats/{chatId}/member", chatId)
             .header("X-UserId", userId.toString())
             .retrieve()
             .onStatus({ httpStatusCode -> httpStatusCode.is4xxClientError }) { response ->
-                handleErrorResponse(response)
+                response.bodyToMono(ErrorResponse::class.java)
+                    .flatMap { error ->
+                        Mono.error(NotFoundException(error.message))
+                    }
             }
             .onStatus({ httpStatusCode -> httpStatusCode.is5xxServerError }) { response ->
                 handleErrorResponse(response)
             }
-            .bodyToMono(UserDataInChat::class.java)
+            .bodyToMono(MemberId::class.java)
+            .map { it.memberId }
     }
 
     fun getAllChatsForUser(userId: UUID): Flux<UUID> {
@@ -48,6 +55,25 @@ class ChatService (
             .onErrorResume { e ->
                 println("Error fetching chats for user $userId: ${e.message}")
                 Flux.error(RuntimeException("Failed to fetch chats"))
+            }
+    }
+
+    fun getActiveUsersInChat(chatId: UUID): Flux<UUID> {
+        return chatServiceWebClient.get()
+            .uri("/chats/{chatId}/members/active", chatId)
+            .accept(MediaType.APPLICATION_JSON)
+            .accept(MediaType.TEXT_EVENT_STREAM) // Для streaming ответов
+            .retrieve()
+            .onStatus(HttpStatusCode::isError) { response ->
+                response.createException().flatMap { Mono.error(it) }
+            }
+            .bodyToFlux(UserId::class.java)
+            .map { userId ->
+                userId.userId
+            }
+            .onErrorResume { e ->
+                println("Error fetching active user in chat $chatId: ${e.message}")
+                Flux.error(RuntimeException("Failed to fetch active users in chats"))
             }
     }
 /*

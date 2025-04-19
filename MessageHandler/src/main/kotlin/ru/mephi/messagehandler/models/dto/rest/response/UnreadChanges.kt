@@ -1,4 +1,4 @@
-package ru.mephi.messagehandler.models.dto.response
+package ru.mephi.messagehandler.models.dto.rest.response
 
 import ru.mephi.messagehandler.models.entity.Message
 import java.util.*

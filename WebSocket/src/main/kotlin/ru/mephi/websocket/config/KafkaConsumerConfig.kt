@@ -13,7 +13,7 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory
 
 @Configuration
 @EnableKafka
-class KafkaActivityMessageConsumerConfig {
+class KafkaConsumerConfig {
     @Value("\${spring.kafka.bootstrap-servers}")
     private lateinit var bootstrapServers: String
 

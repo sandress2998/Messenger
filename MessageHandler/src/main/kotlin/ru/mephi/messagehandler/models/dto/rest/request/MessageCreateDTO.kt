@@ -1,4 +1,4 @@
-package ru.mephi.messagehandler.models.dto.request
+package ru.mephi.messagehandler.models.dto.rest.request
 
 data class MessageCreateDTO(
     val text: String

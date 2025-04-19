@@ -6,19 +6,17 @@ import org.springframework.web.reactive.HandlerMapping
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
 import org.springframework.web.reactive.socket.WebSocketHandler
 import ru.mephi.websocket.handler.SimpleWebSocketHandler
-import ru.mephi.websocket.model.service.ActivityStatusService
+import ru.mephi.websocket.model.service.KafkaProducerService
 import ru.mephi.websocket.model.service.SessionService
-import ru.mephi.websocket.model.service.WebSocketNotificationProcessor
 
 @Configuration
 class WebSocketConfig(
     private val sessionService: SessionService,
-    private val activityStatusService: ActivityStatusService,
-    private val webSocketNotificationProcessor: WebSocketNotificationProcessor
+    private val kafkaProducerService: KafkaProducerService
 ) {
     @Bean
     fun webSocketHandler(): WebSocketHandler {
-        return SimpleWebSocketHandler(sessionService, activityStatusService, webSocketNotificationProcessor)
+        return SimpleWebSocketHandler(sessionService, kafkaProducerService)
     }
 
     @Bean

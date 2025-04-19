@@ -13,7 +13,7 @@ import java.util.*
 @CompoundIndex(def = "{'chatId': 1, 'timestamp': 1}")
 data class Message (
     @Field(targetType = FieldType.BINARY)
-    val senderId: UUID,
+    val memberId: UUID,
 
     @Field(targetType = FieldType.BINARY)
     val chatId: UUID,

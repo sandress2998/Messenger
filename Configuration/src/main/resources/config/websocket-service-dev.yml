@@ -12,6 +12,10 @@ spring:
       port: 6379
   kafka:
     bootstrap-servers: kafka:9092
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
 
 server:
   port:

@@ -1,12 +1,12 @@
 package ru.mephi.websocket.model.service
 
-import reactor.core.publisher.Mono
-import ru.mephi.websocket.dto.websocket.receive.ChatActivityChangeIngoingNotification
-import java.util.*
 
+// по идее уже не нужен, так как все запросы посылаются через http request
+/*
 interface WebSocketNotificationProcessor {
     fun processActivityStatusNotification(
         notification: ChatActivityChangeIngoingNotification,
         receiver: UUID
     ): Mono<Void>
 }
+ */

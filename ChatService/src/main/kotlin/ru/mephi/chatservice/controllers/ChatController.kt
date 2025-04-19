@@ -5,6 +5,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.chatservice.models.dto.rest.*
 import ru.mephi.chatservice.models.entity.Chat
+import ru.mephi.chatservice.service.ActivityService
 import ru.mephi.chatservice.service.ChatService
 import java.util.*
 
@@ -12,7 +13,8 @@ import java.util.*
 @RestController
 @RequestMapping("/chats")
 class ChatController(
-    private val chatService: ChatService
+    private val chatService: ChatService,
+    private val activityService: ActivityService
 ) {
     // Возможно, нужно изменить URL для удобности работы с gateway
     // Нужно добавить пагинацию
@@ -73,7 +75,7 @@ class ChatController(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет изменить информацию о человеке в чате
         @PathVariable("chatId") chatId: UUID,
         @PathVariable("memberId") memberId: UUID,
-        @RequestBody newRole: UserRoleInChat
+        @RequestBody newRole: UpdateChatMemberRole
     ): Mono<RequestResult> {
         return chatService.updateChatMemberToChat(chatId, memberId, newRole.role, userInitiatorId)
     }
@@ -100,12 +102,12 @@ class ChatController(
     }
 
     // здесь кончаются запросы, которые протестированы
-    @GetMapping("/{chatId}/users")
+    @GetMapping("/{chatId}/member")
     fun getUserInChat(
         @RequestHeader("X-UserId") userId: UUID, // userId того, кто хочет добавить другого человека в чат
         @PathVariable("chatId") chatId: UUID
-    ): Mono<UserRoleInChat> {
-        return chatService.getUserRoleInChat(chatId, userId)
+    ): Mono<ChatMemberInfo> {
+        return chatService.getChatMemberId(chatId, userId)
     }
 
     // функция api для другого микросервиса
@@ -114,14 +116,8 @@ class ChatController(
         return chatService.getChatsId(userId)
     }
 
-
-    /*
-    // функция api для другого микросервиса
-    @GetMapping("/{chatId}/users")
-    fun getUsersIdInChat(
-        @PathVariable("chatId") chatId: UUID
-    ): Flux<UserId> {
-        return chatService.getUsersIdByChatId(chatId)
+    @GetMapping("/{chatId}/members/active")
+    fun getActiveUsersInChat(@PathVariable("chatId") chatId: UUID): Flux<UserId> {
+        return activityService.getActiveUsersInChat(chatId)
     }
-     */
 }

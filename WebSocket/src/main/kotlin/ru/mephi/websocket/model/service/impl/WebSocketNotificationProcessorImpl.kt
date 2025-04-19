@@ -1,13 +1,6 @@
 package ru.mephi.websocket.model.service.impl
 
-import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
-import ru.mephi.websocket.dto.websocket.receive.ChatActivityChangeIngoingNotification
-import ru.mephi.websocket.model.mapper.Mapper
-import ru.mephi.websocket.model.service.ActivityStatusService
-import ru.mephi.websocket.model.service.WebSocketNotificationProcessor
-import java.util.*
-
+/*
 @Service
 class WebSocketNotificationProcessorImpl(
     private val activityStatusService: ActivityStatusService,
@@ -23,3 +16,5 @@ class WebSocketNotificationProcessorImpl(
         return activityStatusService.sendStatusUpdateMessage(outgoingMessage)
     }
 }
+
+ */

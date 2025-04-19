@@ -1,7 +1,7 @@
 package ru.mephi.websocket.dto.websocket.send
 
 import ru.mephi.websocket.shared.enums.ActivityStatus
-import java.util.UUID
+import java.util.*
 
 
 // ПЕРЕДЕЛАТЬ: ВМЕСТ EMAIL ПОЛЬЗОВАТЕЛЯ НУЖНО ИСПОЛЬЗОВАТЬ НОМЕР (ID) ПОЛЬЗОВАТЕЛЯ
