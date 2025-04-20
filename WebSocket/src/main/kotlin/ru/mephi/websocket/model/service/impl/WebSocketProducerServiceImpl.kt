@@ -2,10 +2,7 @@ package ru.mephi.websocket.model.service.impl
 
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.dto.kafka.receive.ChatActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatActivityChangeIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatMemberActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.MessageActionIngoingMessage
+import ru.mephi.websocket.dto.kafka.receive.*
 import ru.mephi.websocket.model.mapper.Mapper
 import ru.mephi.websocket.model.service.SessionService
 import ru.mephi.websocket.model.service.WebSocketProducerService
@@ -29,5 +26,9 @@ class WebSocketProducerServiceImpl (
 
     override fun sendMessageActionNotification(message: MessageActionIngoingMessage): Mono<Void> {
         return sessionService.sendNotification(message.userId, mapper.messageActionMessageAsNotification(message))
+    }
+
+    override fun sendUserActionNotification(message: UserActionIngoingMessage): Mono<Void> {
+        return sessionService.sendNotification(message.userId, mapper.userActionMessageAsNotification(message))
     }
 }

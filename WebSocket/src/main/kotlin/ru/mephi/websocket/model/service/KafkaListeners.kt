@@ -5,10 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
-import ru.mephi.websocket.dto.kafka.receive.ChatActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatActivityChangeIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatMemberActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.MessageActionIngoingMessage
+import ru.mephi.websocket.dto.kafka.receive.*
 
 @Component
 class KafkaListeners(
@@ -45,5 +42,12 @@ class KafkaListeners(
         val messageActionIngoingMessage = objectMapper.readValue<MessageActionIngoingMessage>(message)
         println("Listener received: category = $messageActionIngoingMessage + messageInfo: ${messageActionIngoingMessage.messageInfo} :)")
         webSocketProducerService.sendMessageActionNotification(messageActionIngoingMessage).awaitSingleOrNull()
+    }
+
+    @KafkaListener(topics = ["user-action"], groupId = "websocket-service")
+    suspend fun userActionListener(message: String) {
+        val userActionIngoingMessage = objectMapper.readValue<UserActionIngoingMessage>(message)
+        println("Listener received: = $userActionIngoingMessage :)")
+        webSocketProducerService.sendUserActionNotification(userActionIngoingMessage).awaitSingleOrNull()
     }
 }

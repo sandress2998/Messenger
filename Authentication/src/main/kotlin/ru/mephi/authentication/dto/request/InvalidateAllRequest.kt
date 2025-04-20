@@ -1,5 +1,5 @@
 package ru.mephi.authentication.dto.request
 
-class InvalidateAllRequest (
+data class InvalidateAllRequest (
     val jwt: String
 )

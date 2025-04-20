@@ -19,4 +19,11 @@ class WebClients {
             .baseUrl("http://presence-service:8093")
             .build()
     }
+
+    @Bean
+    fun userServiceWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl("http://user-service:8083")
+            .build()
+    }
 }

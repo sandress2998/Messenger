@@ -5,8 +5,7 @@ import ru.mephi.websocket.shared.enums.ChatRole
 import java.util.*
 
 data class MemberInfo (
-    val memberId: UUID,
     val username: String,
     val role: ChatRole,
-    val activity: ActivityStatus
+    val activity: ActivityStatus? = null
 )

@@ -1,10 +1,7 @@
 package ru.mephi.websocket.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.dto.kafka.receive.ChatActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatActivityChangeIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatMemberActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.MessageActionIngoingMessage
+import ru.mephi.websocket.dto.kafka.receive.*
 
 interface WebSocketProducerService {
     fun sendActivityStatusNotification(message: ChatActivityChangeIngoingMessage): Mono<Void>
@@ -14,4 +11,6 @@ interface WebSocketProducerService {
     fun sendChatActionNotification(message: ChatActionIngoingMessage): Mono<Void>
 
     fun sendMessageActionNotification(message: MessageActionIngoingMessage): Mono<Void>
+
+    fun sendUserActionNotification(message: UserActionIngoingMessage): Mono<Void>
 }

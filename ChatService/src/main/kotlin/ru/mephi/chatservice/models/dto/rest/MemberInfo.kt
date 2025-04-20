@@ -4,9 +4,9 @@ import ru.mephi.chatservice.models.ActivityStatus
 import ru.mephi.chatservice.models.ChatRole
 import java.util.*
 
-class MemberInfo (
-    val memberId: UUID,
+data class MemberInfo (
+    val memberId: UUID? = null,
     val username: String,
     val role: ChatRole,
-    val activity: ActivityStatus
+    val activity: ActivityStatus? = null
 ): SuccessResult()

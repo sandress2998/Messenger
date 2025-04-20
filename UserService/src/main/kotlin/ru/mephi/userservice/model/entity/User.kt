@@ -9,6 +9,7 @@ data class User (
     @Id
     val id : UUID,
     val username : String,
-    val email : String
-
+    val tag: String,
+    val email : String,
+    val showEmail: Boolean
 )

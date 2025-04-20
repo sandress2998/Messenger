@@ -47,9 +47,7 @@ class SecurityServiceImpl (
     }
 
     override fun signup(request: SignupRequest): Mono<SignupResponse> {
-        val username = request.username
-        val email = request.email
-        val password = request.password
+        val (username, tag, email, showEmail, password) = request
 
         log.info("Trying to register user with email: $email")
 
@@ -61,7 +59,7 @@ class SecurityServiceImpl (
             .switchIfEmpty(
                 passwordService.create(email, encoder.encode(password))
                 .flatMap { user ->
-                    userServiceWebClient.createUser(CreateUserDTO(user.id!!, username, email))
+                    userServiceWebClient.createUser(CreateUserDTO(user.id!!, username, tag, email, showEmail))
                     .then (Mono.defer {
                         println("User was successfully created")
                         val userId = user.id.toString()

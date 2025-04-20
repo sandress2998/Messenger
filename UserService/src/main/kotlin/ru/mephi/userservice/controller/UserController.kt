@@ -2,38 +2,44 @@ package ru.mephi.userservice.controller
 
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
-import ru.mephi.userservice.model.dto.CreateUserDTO
-import ru.mephi.userservice.model.dto.GetUserDTO
-import ru.mephi.userservice.model.dto.UpdateUserDTO
+import ru.mephi.userservice.model.dto.CreateUserRequest
+import ru.mephi.userservice.model.dto.UserInfo
+import ru.mephi.userservice.model.dto.UpdateUserRequest
 import ru.mephi.userservice.model.entity.User
 import ru.mephi.userservice.service.UserService
 import java.util.*
 
 @RestController
+@RequestMapping("/users")
 class UserController(
     private val userService: UserService,
 ) {
-    @PostMapping("/users")
-    fun addUser(@RequestBody user: CreateUserDTO): Mono<User> {
+    @PostMapping
+    fun addUser(@RequestBody user: CreateUserRequest): Mono<User> {
         return userService.createUser(user)
     }
 
-    @PatchMapping("/users")
+    @PutMapping
     fun updateUser(
-        @RequestBody request: UpdateUserDTO,
+        @RequestBody request: UpdateUserRequest,
         @RequestHeader("X-UserId") userId: UUID
     ): Mono<User> {
         return userService.updateUser(userId, request)
     }
 
-    @GetMapping("/users/{userId}")
-    fun getUserById(@PathVariable userId: UUID): Mono<GetUserDTO> {
+    @GetMapping("/{userId}")
+    fun getUserById(@PathVariable userId: UUID): Mono<UserInfo> {
         return userService.getUser(userId)
     }
 
-    @DeleteMapping("/users")
+    @DeleteMapping
     fun deleteUserById(@RequestHeader("X-UserId") userId: UUID): Mono<Void> {
         return userService.deleteUser(userId)
+    }
+
+    @GetMapping("/me")
+    fun getCurrentUserInfo(@RequestHeader("X-UserId") userId: UUID): Mono<User> {
+        return userService.getCurrentUser(userId)
     }
 }
 

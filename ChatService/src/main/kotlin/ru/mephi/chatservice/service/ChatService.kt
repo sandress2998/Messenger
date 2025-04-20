@@ -14,12 +14,16 @@ import ru.mephi.chatservice.models.ActivityStatus
 import ru.mephi.chatservice.models.ChatAction
 import ru.mephi.chatservice.models.ChatMemberAction
 import ru.mephi.chatservice.models.ChatRole
+import ru.mephi.chatservice.models.dto.kafka.ActivityChangeIngoingMessage
+import ru.mephi.chatservice.models.dto.kafka.UserAction
+import ru.mephi.chatservice.models.dto.kafka.UserActionForChatMembersIngoingMessage
 import ru.mephi.chatservice.models.dto.rest.*
 import ru.mephi.chatservice.models.exception.NotFoundException
 import ru.mephi.chatservice.models.exception.AccessDeniedException
 import ru.mephi.chatservice.models.exception.FailureResult
 import ru.mephi.chatservice.repository.UserRepository
 import ru.mephi.chatservice.webclient.MessageHandlerService
+import ru.mephi.chatservice.webclient.UserService
 import java.util.*
 
 @Service
@@ -30,7 +34,8 @@ class ChatService(
     private val messageHandlerService: MessageHandlerService,
     private val chatNotificationService: ChatNotificationService,
     private val transactionalOperator: TransactionalOperator,
-    private val activityService: ActivityService
+    private val activityService: ActivityService,
+    private val userService: UserService
 ) {
     // ВНИМАНИЕ! В НЕКОТОРЫХ ФУНКЦИЯХ ПОСТАВЛЕНЫ ЗАГЛУШКИ С ActivityStatus.ACTIVE
 
@@ -66,8 +71,8 @@ class ChatService(
             }
             .then(chatMembersRepository.countByChatId(chatId))
             .flatMap { membersQuantity ->
-                val chatInfo = ChatInfo(chatId, chat.name,  membersQuantity.toInt())
-                chatNotificationService.notifyAboutChatAction(chatId, ChatAction.UPDATE, chatInfo)
+                val chatInfo = ChatInfo(null, chat.name,  membersQuantity.toInt())
+                chatNotificationService.notifyAboutChatAction(chatId, ChatAction.UPDATED, chatInfo)
             }
             .thenReturn(SuccessResult() as RequestResult)
             .`as`(transactionalOperator::transactional)
@@ -86,7 +91,7 @@ class ChatService(
             .then(chatMembersRepository.deleteChatMembersByChatId(chatId))
             .then(chatRepository.deleteById(chatId))
             .then(messageHandlerService.deleteChat(chatId))
-            .then(chatNotificationService.notifyAboutChatAction(chatId, ChatAction.DELETE))
+            .then(chatNotificationService.notifyAboutChatAction(chatId, ChatAction.DELETED))
             .then(activityService.deleteChat(chatId))
             .thenReturn(SuccessResult() as RequestResult)
             .`as`(transactionalOperator::transactional)
@@ -126,6 +131,7 @@ class ChatService(
             }
     }
 
+    /* удалено, т.к. теперь будет единственный способ добавления пользователя в чат
     //Операции только с участниками чатов
     @Transactional
     fun addMemberToChat(memberInfo: MemberCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<MemberInfo> {
@@ -172,6 +178,7 @@ class ChatService(
             }
             .`as`(transactionalOperator::transactional)
     }
+     */
 
     @Transactional
     fun updateChatMemberToChat(chatId: UUID, memberId: UUID, newRole: ChatRole, userInitiatorId: UUID): Mono<RequestResult> {
@@ -196,11 +203,8 @@ class ChatService(
                 .then(chatMembersRepository.update(memberId, newRole))
                 .then(userRepository.getUsernameById(fetchedChatMember.userId))
                 .flatMap { username ->
-                    activityService.getActivityStatus(fetchedChatMember.userId, chatId)
-                        .flatMap { activityStatus ->
-                            val memberInfo = MemberInfo(memberId, username!!, newRole, activityStatus)
-                            chatNotificationService.notifyAboutChatMemberAction(chatId, memberId, ChatMemberAction.UPDATE, memberInfo)
-                        }
+                    val memberInfo = MemberInfo(null, username!!, newRole)
+                    chatNotificationService.notifyAboutChatMemberAction(chatId, memberId, ChatMemberAction.UPDATED, memberInfo)
                 }
             }
             .thenReturn(SuccessResult() as RequestResult)
@@ -209,8 +213,7 @@ class ChatService(
 
     @Transactional
     fun addUserToChat(request: MemberFromUserCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<MemberInfo> {
-        val email = request.email
-        val role = request.role
+        val (tag, role) = request
         return isUserAdminInChat(chatId, userInitiatorId)
             .flatMap { isAdmin: Boolean ->
                 if (!isAdmin) {
@@ -219,7 +222,7 @@ class ChatService(
                     Mono.empty()
                 }
             }
-            .then(userRepository.getUserIdAndUsernameByEmail(email))
+            .then(userRepository.getUserIdAndUsernameByTag(tag))
             .flatMap { pair ->
                 val userId = pair.first
                 if (userId == null) {
@@ -233,13 +236,13 @@ class ChatService(
                             messageHandlerService.createMessageReadReceipt(userId, chatId)
                                 .then(activityService.getUserActivityStatus(userId))
                                     .flatMap { activityStatus ->
-                                        val memberInfo = MemberInfo(memberId, username, role, activityStatus)
+                                        val memberInfo = MemberInfo(null, username, role, activityStatus)
                                         when (activityStatus) {
                                             ActivityStatus.ACTIVE -> activityService.addToChat(userId, chatId)
                                             ActivityStatus.INACTIVE -> Mono.empty()
                                         }
                                         .then(chatNotificationService.notifyAboutChatMemberAction(chatId, memberId, ChatMemberAction.NEW, memberInfo))
-                                        .thenReturn(memberInfo)
+                                        .thenReturn(memberInfo.copy(memberId = memberId))
                                     }
                         }
                 }
@@ -260,7 +263,7 @@ class ChatService(
                         deleteChatMemberByAnotherMemberFromChat(member, userInitiatorId)
                     }
                 }
-                .then(chatNotificationService.notifyAboutChatMemberAction(chatId, memberToDeleteId, ChatMemberAction.DELETE))
+                .then(chatNotificationService.notifyAboutChatMemberAction(chatId, memberToDeleteId, ChatMemberAction.DELETED))
                 .then(activityService.deleteFromChat(member.userId, chatId))
                 .thenReturn(SuccessResult() as RequestResult)
             }
@@ -279,9 +282,47 @@ class ChatService(
             .flatMap { chatId -> Mono.just(ChatId(chatId)) }
     }
 
+    fun getUserInfoByMemberId(chatId: UUID, memberId: UUID, userInitiatorId: UUID): Mono<UserInfo> {
+        return isUserMemberInChat(chatId, userInitiatorId)
+            .flatMap { isMember ->
+                if (isMember) {
+                    chatMembersRepository.getById(memberId)
+                        .flatMap { member ->
+                            val userId = member.userId
+                            userService.getUserInfo(userId)
+                        }
+                        .switchIfEmpty(Mono.error(NotFoundException("Member not found")))
+                } else {
+                    Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_MEMBER))
+                }
+            }
+    }
+
+    @Transactional
+    fun handleUserActionNotification(userActionIngoingMessage: UserActionForChatMembersIngoingMessage): Mono<Void> {
+        val (userId, action) = userActionIngoingMessage
+        return chatMembersRepository.getChatMembersByUserId(userId)
+            .flatMap { chatMember ->
+                val (chatId, _, role, memberId) = chatMember
+                when (action) {
+                    UserAction.UPDATED -> {
+                        userRepository.getUsernameById(userId)
+                            .flatMap { username ->
+                                val memberInfo = MemberInfo(null, username!!, role, null)
+                                chatNotificationService.notifyAboutChatMemberAction(chatId, memberId!!, ChatMemberAction.UPDATED, memberInfo)
+                            }
+                    }
+
+                    UserAction.DELETED -> {
+                        deleteMemberFromChat(chatId, memberId!!, userId)
+                    }
+                }
+            }
+            .then()
+    }
+
     private fun deleteChatMemberByAnotherMemberFromChat(memberToDelete: ChatMember, userInitiatorId: UUID): Mono<Void> {
-        val chatId = memberToDelete.chatId
-        val memberToDeleteId = memberToDelete.id!!
+        val (chatId, _, _, memberToDeleteId) = memberToDelete
         return isUserAdminInChat(chatId, userInitiatorId)
             .flatMap { isAdmin: Boolean ->
                 if (!isAdmin) {
@@ -291,16 +332,16 @@ class ChatService(
                 }
             }
             .then(isMemberSingleAdmin(chatId, memberToDelete))
-            .then(privateDeleteChatMemberFromChat(chatId, memberToDeleteId))
+            .then(privateDeleteChatMemberFromChat(chatId, memberToDeleteId!!))
             .then(messageHandlerService.deleteMessageReadReceipt(memberToDelete.userId, chatId))
             .then()
     }
 
     private fun quitFromChat(memberToDelete: ChatMember): Mono<Void> {
-        val chatId = memberToDelete.chatId
+        val (chatId, userId, _, id) = memberToDelete
         return isMemberSingleAdmin(chatId, memberToDelete)
-            .then(privateDeleteChatMemberFromChat(chatId, memberToDelete.id!!))
-            .then(messageHandlerService.deleteMessageReadReceipt(memberToDelete.userId, chatId))
+            .then(privateDeleteChatMemberFromChat(chatId, id!!))
+            .then(messageHandlerService.deleteMessageReadReceipt(userId, chatId))
             .then()
     }
 

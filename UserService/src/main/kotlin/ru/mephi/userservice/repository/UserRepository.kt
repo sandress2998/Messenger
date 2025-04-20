@@ -11,15 +11,17 @@ import java.util.*
 @Repository
 interface UserRepository : ReactiveCrudRepository<User, UUID> {
     @Query("""
-        INSERT INTO users (id, username, email, activity)
-        VALUES (:id, :username, :email, 'ACTIVE')
+        INSERT INTO users (id, username, tag, email, show_email)
+        VALUES (:id, :username, :tag, :email, :show_email)
         ON CONFLICT (id) DO UPDATE
-        SET username = :username, email = :email
+        SET username = :username, tag = :tag, email = :email, show_email = :show_email
     """)
     fun upsert(
-        @Param("id") id: UUID,
+        @Param("id") userId: UUID,
         @Param("username") username: String,
-        @Param("email") email: String
+        @Param("tag") tag: String,
+        @Param("email") email: String,
+        @Param("show_email") showEmail: Boolean
     ): Mono<Void>
 
     fun findUserById(id : UUID) : Mono<User>

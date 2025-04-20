@@ -25,9 +25,9 @@ class UserRepository(private val databaseClient: DatabaseClient) {
             .one()
     }
 
-    fun getUserIdAndUsernameByEmail(email: String): Mono<Pair<UUID?, String?>> {
-        return databaseClient.sql("SELECT id, username FROM users WHERE email = $1;") // Используем $1 вместо :email
-            .bind(0, email) // Индексация с 0
+    fun getUserIdAndUsernameByTag(tag: String): Mono<Pair<UUID?, String?>> {
+        return databaseClient.sql("SELECT id, username FROM users WHERE tag = $1;") // Используем $1 вместо :email
+            .bind(0, tag) // Индексация с 0
             .map { row, _ -> Pair(row.get("id", UUID::class.java), row.get("username", String::class.java)) }
             .one()
     }

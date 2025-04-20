@@ -12,6 +12,8 @@ spring:
     url: r2dbc:postgresql://postgres:5432/postgres_database
     username: username
     password: password
+  kafka:
+    bootstrap-servers: kafka:9092
 
 logging:
   level:

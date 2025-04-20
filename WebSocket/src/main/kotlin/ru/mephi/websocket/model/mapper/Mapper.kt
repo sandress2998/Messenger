@@ -1,14 +1,8 @@
 package ru.mephi.websocket.model.mapper
 
 import org.springframework.stereotype.Component
-import ru.mephi.websocket.dto.kafka.receive.ChatActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatActivityChangeIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.ChatMemberActionIngoingMessage
-import ru.mephi.websocket.dto.kafka.receive.MessageActionIngoingMessage
-import ru.mephi.websocket.dto.websocket.send.ChatActionNotification
-import ru.mephi.websocket.dto.websocket.send.ChatActivityChangeOutgoingNotification
-import ru.mephi.websocket.dto.websocket.send.ChatMemberActionNotification
-import ru.mephi.websocket.dto.websocket.send.MessageActionNotification
+import ru.mephi.websocket.dto.kafka.receive.*
+import ru.mephi.websocket.dto.websocket.send.*
 
 @Component
 class Mapper {
@@ -50,6 +44,15 @@ class Mapper {
             memberId = message.memberId,
             messageInfo = message.messageInfo
         )
+        return notification
+    }
+
+    fun userActionMessageAsNotification(message: UserActionIngoingMessage): UserActionOutgoingNotification {
+        val notification = UserActionOutgoingNotification (
+            action = message.action,
+            userInfo = message.userInfo
+        )
+
         return notification
     }
 }

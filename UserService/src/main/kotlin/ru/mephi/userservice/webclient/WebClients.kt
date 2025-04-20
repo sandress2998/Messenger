@@ -9,7 +9,14 @@ class WebClients {
     @Bean
     fun authServiceWebClient(): WebClient {
         return WebClient.builder()
-            .baseUrl("http://authentication-service:8090") // Базовый URL для сервиса пользователей
+            .baseUrl("http://authentication-service:8090")
+            .build()
+    }
+
+    @Bean
+    fun presenceServiceWebClient(): WebClient {
+        return WebClient.builder()
+            .baseUrl("http://presence-service:8093") //
             .build()
     }
 }

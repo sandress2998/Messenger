@@ -58,6 +58,7 @@ class ChatController(
         return chatService.getChatMembersByChatId(chatId, userId)
     }
 
+    /*
     @PostMapping("/{chatId}/members")
     fun addUserToChat(
         @RequestHeader("X-UserId") userInitiatorId: UUID, // userId того, кто хочет добавить другого человека в чат
@@ -68,6 +69,7 @@ class ChatController(
             memberCreationRequest, chatId, userInitiatorId
         )
     }
+     */
 
     // по-хорошему здесь нужен patch, но мне лень пересобирать изображения
     @PutMapping("/{chatId}/members/{memberId}")
@@ -119,5 +121,14 @@ class ChatController(
     @GetMapping("/{chatId}/members/active")
     fun getActiveUsersInChat(@PathVariable("chatId") chatId: UUID): Flux<UserId> {
         return activityService.getActiveUsersInChat(chatId)
+    }
+
+    @GetMapping("/{chatId}/members/{memberId}")
+    fun getUserInfoByMemberId(
+        @RequestHeader("X-UserId") userInitiatorId: UUID,
+        @PathVariable("chatId") chatId: UUID,
+        @PathVariable("memberId") memberId: UUID
+    ): Mono<UserInfo> {
+        return chatService.getUserInfoByMemberId(chatId, memberId, userInitiatorId)
     }
 }
