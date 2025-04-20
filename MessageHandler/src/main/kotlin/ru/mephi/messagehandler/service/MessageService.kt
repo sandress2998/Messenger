@@ -189,27 +189,30 @@ class MessageService (
     fun markAsHandledMessage(userId: UUID, chatId: UUID, messageId: UUID, action: MessageAction): Mono<RequestResult> {
         return checkIfUserMember(userId, chatId)
             .flatMap { memberId ->
-                 when (action) {
-                     MessageAction.VIEWED -> {
-                        messageRepository.findById(messageId)
-                            .flatMap { message ->
-                                messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
-                                .then(markAsViewed(userId, memberId, chatId, messageId))
+                messageRepository.findById(messageId)
+                    .switchIfEmpty(Mono.error(NotFoundException("Message not found")))
+                    .flatMap { message ->
+                        when (action) {
+                            MessageAction.VIEWED -> {
+                                //messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
+                                markAsViewed(memberId, chatId, messageId)
                             }
-                     }
-                     MessageAction.UPDATED -> {
-                         messageReadReceiptService.markEditedMessageAsProcessed(userId, chatId, messageId)
-                     }
-                     MessageAction.DELETED -> {
-                         messageReadReceiptService.markDeletedMessageAsProcessed(userId,chatId, messageId)
-                     }
-                     else -> Mono.empty()
-                }
+                            MessageAction.UPDATED -> {
+                                messageReadReceiptService.markEditedMessageAsProcessed(userId, chatId, messageId)
+                            }
+                            MessageAction.DELETED -> {
+                                messageReadReceiptService.markDeletedMessageAsProcessed(userId,chatId, messageId)
+                            }
+                            // ВОТ ЗДЕСЬ УЖЕ НАЧИНАЮТСЯ ИЗМЕНЕНИЯ
+                            MessageAction.NEW -> {
+                                messageReadReceiptService.updateLastConfirmedTime(userId,chatId, message.timestamp) }
+                            }
+                    }
             }
             .thenReturn(SuccessResult())
     }
 
-    private fun markAsViewed(userId: UUID, memberId: UUID, chatId: UUID, messageId: UUID): Mono<Void> {
+    private fun markAsViewed(memberId: UUID, chatId: UUID, messageId: UUID): Mono<Void> {
         val binMessageId = UUIDUtil.toBinary(messageId)
         return mongoTemplate.findOne(
             Query(Criteria.where("_id").`is`(binMessageId)),
@@ -230,8 +233,7 @@ class MessageService (
                         Message::class.java
                     ).flatMap { result ->
                         if (result.modifiedCount > 0) {
-                            messageReadReceiptService.updateLastConfirmedTime(userId, chatId, message.timestamp)
-                                .then(messageNotificationService.notifyChatMembersAboutMessageAction(memberId, chatId, messageId, MessageAction.VIEWED))
+                            messageNotificationService.notifyChatMembersAboutMessageAction(memberId, chatId, messageId, MessageAction.VIEWED)
                         } else {
                             Mono.empty()
                         }
