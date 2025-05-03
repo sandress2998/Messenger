@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import ru.mephi.messagehandler.models.exception.FailureResult
-import ru.mephi.messagehandler.models.exception.NotFoundException
+import ru.mephi.messagehandler.models.exception.AccessDeniedException
 import ru.mephi.messagehandler.models.responce.ErrorResponse
 import ru.mephi.messagehandler.webclient.dto.ChatId
 import ru.mephi.messagehandler.webclient.dto.MemberId
@@ -28,7 +28,7 @@ class ChatService (
             .onStatus({ httpStatusCode -> httpStatusCode.is4xxClientError }) { response ->
                 response.bodyToMono(ErrorResponse::class.java)
                     .flatMap { error ->
-                        Mono.error(NotFoundException(error.message))
+                        Mono.error(AccessDeniedException(AccessDeniedException.Cause.NOT_MEMBER))
                     }
             }
             .onStatus({ httpStatusCode -> httpStatusCode.is5xxServerError }) { response ->

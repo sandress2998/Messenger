@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s  # Как часто собирать метрики
+
+rule_files:
+  - /etc/prometheus/rule_files/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']  # Адрес экспортера

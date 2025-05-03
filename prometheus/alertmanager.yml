@@ -1,0 +1,15 @@
+route:
+  receiver: 'telegram'
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 3h
+
+receivers:
+  - name: 'telegram'
+    telegram_configs:
+      - api_url: "https://api.telegram.org"
+        bot_token: '7974062841:AAGny7L9tHyyeR84PoCqn3IeV3rbfjMsBDI'
+        chat_id: !!int 1802232115  # ID чата или канала
+        send_resolved: true     # Отправлять уведомление при восстановлении
+        message: "{{ range .Alerts }}[{{ .Status | toUpper }}] {{ .Labels.alertname }}\n{{ .Annotations.summary }}\n{{ end }}"

@@ -251,10 +251,94 @@ services:
     command: /bin/sh -c "env && sleep 10 && java -jar /app/app.jar"
 
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml  # Конфиг Prometheus
+      - ./prometheus/rule_files/:/etc/prometheus/rule_files/
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - messenger-network
+
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+    networks:
+      - messenger-network
+
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - messenger-network
+
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://username:password@postgres:5432/postgres_database?sslmode=disable"
+      PG_EXPORTER_EXTEND_QUERY_PATH: "/config/queries.yml"  # Ключевой параметр!
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+    networks:
+      - messenger-network
+
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter
+    environment:
+      - REDIS_ADDR=redis://redis:6379  # Подключение к Redis
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+    networks:
+      - messenger-network
+
+
+  mongodb-exporter:
+    image: bitnami/mongodb-exporter:latest
+    container_name: mongodb-exporter
+    environment:
+      - MONGODB_URI=mongodb://username:password@mongodb:27017/messenger?authSource=admin
+      # Опционально: дополнительные настройки
+      - COLLECT_COLLECTIONS=true  # Сбор метрик по коллекциям
+      - DISCOVERING_MODE=true     # Автообнаружение баз/коллекций
+    ports:
+      - "9216:9216"  # Порт экспортера
+    depends_on:
+      - mongodb
+    networks:
+      - messenger-network  # Должен быть в той же сети, что и MongoDB!
+
+
 volumes:
   postgres_data:
   redis_data:
   mongodb_data:
+  grafana_data:
 
 networks:
   messenger-network:
