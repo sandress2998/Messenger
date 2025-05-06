@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import ru.mephi.messagehandler.models.MessageAction
 import ru.mephi.messagehandler.models.dto.kafka.MessageActionOutgoingMessage
 import ru.mephi.messagehandler.models.dto.kafka.NewMessageInfo
-import ru.mephi.messagehandler.models.entity.MessageStatus
+import ru.mephi.messagehandler.database.entity.MessageStatus
 import ru.mephi.messagehandler.webclient.dto.ChatId
 import ru.mephi.messagehandler.webclient.dto.ChatIdDeserializer
 import java.time.Instant

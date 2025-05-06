@@ -12,6 +12,27 @@ spring:
         locator:
           enabled: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, metrics, gateway  # Добавляем gateway
+  metrics:
+    enable:
+      all: true
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    gateway:
+      enabled: true  # Активируем эндпоинты Gateway
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 server:
   port:
     8080

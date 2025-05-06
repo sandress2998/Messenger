@@ -1,0 +1,11 @@
+groups:
+  - name: discovery-service-alerts
+    rules:
+      - alert: DiscoveryServiceDown
+        expr: up{job="discovery-service"} == 0
+        for: 1m  # Минимальное время, чтобы избежать ложных срабатываний
+        labels:
+          severity: critical
+        annotations:
+          summary: "Сервис {{ $labels.instance }} недоступен!"
+          description: "Сервис {{ $labels.job }} на {{ $labels.instance }} не отвечает более 1 минуты."

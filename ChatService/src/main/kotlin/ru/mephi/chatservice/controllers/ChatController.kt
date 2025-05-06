@@ -3,10 +3,10 @@ package ru.mephi.chatservice.controllers
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.dto.rest.*
-import ru.mephi.chatservice.models.entity.Chat
-import ru.mephi.chatservice.service.ActivityService
-import ru.mephi.chatservice.service.ChatService
+import ru.mephi.chatservice.model.dto.rest.*
+import ru.mephi.chatservice.database.entity.Chat
+import ru.mephi.chatservice.model.service.ActivityService
+import ru.mephi.chatservice.model.service.ChatService
 import java.util.*
 
 

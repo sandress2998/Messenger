@@ -1,6 +1,6 @@
 package ru.mephi.messagehandler.models.dto.kafka
 
-import ru.mephi.messagehandler.models.entity.Message
+import ru.mephi.messagehandler.database.entity.Message
 
 data class UpdatedMessageInfo(
     val text: String

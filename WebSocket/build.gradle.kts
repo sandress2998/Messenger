@@ -40,6 +40,9 @@ dependencies {
 
     implementation("org.springframework.kafka:spring-kafka")
 
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")

@@ -1,6 +1,6 @@
 package ru.mephi.messagehandler.models.dto.rest.response
 
-import ru.mephi.messagehandler.models.entity.Message
+import ru.mephi.messagehandler.database.entity.Message
 import java.util.*
 
 class UnreadChanges(

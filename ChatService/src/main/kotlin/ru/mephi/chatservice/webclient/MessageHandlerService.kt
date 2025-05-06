@@ -6,7 +6,7 @@ import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.exception.FailureResult
+import ru.mephi.chatservice.model.exception.FailureResult
 import java.util.*
 
 @Service

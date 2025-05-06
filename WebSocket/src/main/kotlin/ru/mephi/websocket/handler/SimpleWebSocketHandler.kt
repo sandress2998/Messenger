@@ -8,7 +8,7 @@ import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.dto.kafka.send.ActivityChangeOutgoingMessage
+import ru.mephi.websocket.model.dto.kafka.send.ActivityChangeOutgoingMessage
 import ru.mephi.websocket.model.service.KafkaProducerService
 import ru.mephi.websocket.model.service.SessionService
 import ru.mephi.websocket.shared.enums.ActivityStatus

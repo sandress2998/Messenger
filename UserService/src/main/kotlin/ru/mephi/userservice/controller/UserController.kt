@@ -5,8 +5,8 @@ import reactor.core.publisher.Mono
 import ru.mephi.userservice.model.dto.CreateUserRequest
 import ru.mephi.userservice.model.dto.UserInfo
 import ru.mephi.userservice.model.dto.UpdateUserRequest
-import ru.mephi.userservice.model.entity.User
-import ru.mephi.userservice.service.UserService
+import ru.mephi.userservice.database.entity.User
+import ru.mephi.userservice.model.service.UserService
 import java.util.*
 
 @RestController

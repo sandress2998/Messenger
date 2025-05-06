@@ -1,11 +1,18 @@
 package ru.mephi.authentication.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.authentication.dto.request.*
-import ru.mephi.authentication.dto.response.*
+import ru.mephi.authentication.model.dto.request.RefreshRequest
+import ru.mephi.authentication.model.dto.request.SigninRequest
+import ru.mephi.authentication.model.dto.request.SignoutRequest
+import ru.mephi.authentication.model.dto.request.SignupRequest
+import ru.mephi.authentication.model.dto.response.*
 import java.util.*
 
 interface SecurityService {
+    companion object {
+        const val CLASS_NAME = "SecurityService"
+    }
+
     fun signin(request: SigninRequest): Mono<SigninResponse>
 
     fun signup(request: SignupRequest): Mono<SignupResponse>

@@ -6,6 +6,10 @@ import ru.mephi.authentication.database.entity.Password
 import java.util.*
 
 interface PasswordService {
+    companion object {
+        const val CLASS_NAME = "PasswordService"
+    }
+
     fun findByEmail(email: String): Mono<Password>
 
     fun findById(id: UUID): Mono<Password>

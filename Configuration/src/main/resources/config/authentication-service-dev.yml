@@ -10,12 +10,10 @@ eureka:
 spring:
   application:
     name: authentication-service
-
   r2dbc:
     url: r2dbc:postgresql://postgres:5432/postgres_database
     username: username
     password: password
-
   data:
     redis:
       host: redis
@@ -32,3 +30,18 @@ my:
     jwt-timeout-in-minutes: 60
     refresh-timeout-in-days: 7
     secret-string: "mySecretStringForKeymySecretStringForKeymySecretStringForKey"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus  # ← Без пробелов после запятых!
+  metrics:
+    enable:
+      all: true
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true

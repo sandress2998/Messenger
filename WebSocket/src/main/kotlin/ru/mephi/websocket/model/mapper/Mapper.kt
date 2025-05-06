@@ -3,6 +3,8 @@ package ru.mephi.websocket.model.mapper
 import org.springframework.stereotype.Component
 import ru.mephi.websocket.dto.kafka.receive.*
 import ru.mephi.websocket.dto.websocket.send.*
+import ru.mephi.websocket.model.dto.kafka.receive.*
+import ru.mephi.websocket.model.dto.websocket.send.*
 
 @Component
 class Mapper {

@@ -9,9 +9,9 @@ import ru.mephi.messagehandler.models.dto.rest.request.MessageSearchDTO
 import ru.mephi.messagehandler.models.dto.rest.request.MessageUpdateDTO
 import ru.mephi.messagehandler.models.dto.rest.response.RequestResult
 import ru.mephi.messagehandler.models.dto.rest.response.UnreadChanges
-import ru.mephi.messagehandler.models.entity.Message
-import ru.mephi.messagehandler.service.MessageReadReceiptService
-import ru.mephi.messagehandler.service.MessageService
+import ru.mephi.messagehandler.database.entity.Message
+import ru.mephi.messagehandler.models.service.MessageReadReceiptService
+import ru.mephi.messagehandler.models.service.MessageService
 import java.util.*
 
 @RestController

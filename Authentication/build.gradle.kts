@@ -40,6 +40,10 @@ dependencies {
 
     implementation("io.jsonwebtoken:jjwt:0.12.6")
 
+    implementation("io.micrometer:micrometer-registry-prometheus:1.14.5")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("io.projectreactor:reactor-core")
+
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")

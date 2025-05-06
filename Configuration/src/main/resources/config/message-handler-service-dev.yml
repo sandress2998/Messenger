@@ -38,3 +38,17 @@ my:
   messages:
     pagination-quantity: 5
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus  # ← Без пробелов после запятых!
+  metrics:
+    enable:
+      all: true
+    tags:
+      application: ${spring.application.name}
+  prometheus:
+    metrics:
+      export:
+        enabled: true

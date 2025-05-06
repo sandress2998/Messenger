@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.dto.rest.UserInfo
+import ru.mephi.chatservice.model.dto.rest.UserInfo
 import java.util.*
 
 @Service

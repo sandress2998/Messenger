@@ -6,6 +6,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
 import ru.mephi.websocket.dto.kafka.receive.*
+import ru.mephi.websocket.model.dto.kafka.receive.*
 
 @Component
 class KafkaListeners(

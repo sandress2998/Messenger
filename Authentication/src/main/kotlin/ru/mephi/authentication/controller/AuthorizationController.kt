@@ -1,8 +1,11 @@
 package ru.mephi.authentication.controller
 
 import reactor.core.publisher.Mono
-import ru.mephi.authentication.dto.request.*
-import ru.mephi.authentication.dto.response.*
+import ru.mephi.authentication.model.dto.request.RefreshRequest
+import ru.mephi.authentication.model.dto.request.SigninRequest
+import ru.mephi.authentication.model.dto.request.SignoutRequest
+import ru.mephi.authentication.model.dto.request.SignupRequest
+import ru.mephi.authentication.model.dto.response.*
 import java.util.*
 
 

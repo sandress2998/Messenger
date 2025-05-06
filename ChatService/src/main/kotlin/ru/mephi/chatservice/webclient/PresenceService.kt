@@ -4,8 +4,8 @@ import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
-import ru.mephi.chatservice.models.ActivityStatus
-import ru.mephi.chatservice.models.dto.rest.UserActivityStatus
+import ru.mephi.chatservice.model.ActivityStatus
+import ru.mephi.chatservice.model.dto.rest.UserActivityStatus
 import java.util.UUID
 
 @Service

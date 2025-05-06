@@ -3,6 +3,7 @@ package ru.mephi.websocket.model.service.impl
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import ru.mephi.websocket.dto.kafka.receive.*
+import ru.mephi.websocket.model.dto.kafka.receive.*
 import ru.mephi.websocket.model.mapper.Mapper
 import ru.mephi.websocket.model.service.SessionService
 import ru.mephi.websocket.model.service.WebSocketProducerService

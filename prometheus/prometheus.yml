@@ -12,4 +12,45 @@ alerting:
 scrape_configs:
   - job_name: 'postgres-exporter'
     static_configs:
-      - targets: ['postgres-exporter:9187']  # Адрес экспортера
+      - targets: ['postgres-exporter:9187']
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: [ 'redis-exporter:9121' ]
+  - job_name: 'mongodb-exporter'
+    static_configs:
+      - targets: [ 'postgres-exporter:9216' ]
+  - job_name: 'gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'gateway:8080' ]
+  - job_name: 'config-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'config-service:8000' ]
+  - job_name: 'discovery-service'
+    eureka_sd_configs:
+      - server: 'http://discovery-service:8761'
+  - job_name: 'websocket-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'websocket-service:8092' ]
+  - job_name: 'presence-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'presence-service:8093' ]
+  - job_name: 'authentication-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'authentication-service:8090' ]
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'user-service:8083' ]
+  - job_name: 'chat-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'chat-service:8082' ]
+  - job_name: 'message-handler-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: [ 'message-handler-service:8091' ]
