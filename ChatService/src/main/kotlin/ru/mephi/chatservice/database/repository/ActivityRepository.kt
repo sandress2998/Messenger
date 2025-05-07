@@ -12,7 +12,6 @@ import java.util.*
 @Repository
 class ActivityRepository (
     private val redisTemplate: ReactiveRedisTemplate<String, String>,
-    private val chatMembersRepository: ChatMembersRepository,
     private val securityProperties: SecurityProperties
 ) {
     val redisOpsForList = redisTemplate.opsForList()

@@ -316,21 +316,22 @@ class ChatService(
                         if (chatMember.role != ChatRole.ADMIN) {
                             deleteMemberFromChat(chatId, memberId!!, userId)
                         } else {
-                            deleteAdminAndSelectNewAdmin(chatMember)
+                            deleteAdmin(chatMember)
                         }
                     }
                 }
             }
             .then()
+            .`as`(transactionalOperator::transactional)
     }
 
-    private fun deleteAdminAndSelectNewAdmin(memberToDelete: ChatMember): Mono<Void> {
+    private fun deleteAdmin(memberToDelete: ChatMember): Mono<Void> {
         val (chatId, userId, _, memberId) = memberToDelete
         return chatMembersRepository.countByChatId(chatId)
             .flatMap { membersQuantity ->
                 if (membersQuantity.toInt() == 1) {
-                    chatRepository.deleteById(chatId)
-                        .then(chatMembersRepository.deleteById(memberId!!))
+                    chatMembersRepository.deleteById(memberId!!)
+                        .then(chatRepository.deleteById(chatId))
                 } else {
                     chatMembersRepository.getAdminCount(chatId)
                         .flatMap { adminQuantity ->
@@ -343,7 +344,7 @@ class ChatService(
                                             userRepository.getUsernameById(selectedMember.userId)
                                                 .flatMap { username ->
                                                     val memberInfo = MemberInfo(selectedMember.id!!, username!!, ChatRole.ADMIN)
-                                                    chatNotificationService.notifyAboutChatMemberAction(chatId, memberId, ChatMemberAction.UPDATED, memberInfo)
+                                                    chatNotificationService.notifyAboutChatMemberAction(chatId, selectedMember.id, ChatMemberAction.UPDATED, memberInfo)
                                                 }
                                         }
                                 } else {

@@ -16,6 +16,15 @@ class ExceptionResolver {
         return ResponseEntity(errorResponse, HttpStatus.NOT_FOUND)
     }
 
+    @ExceptionHandler(BadRequest::class)
+    fun handleFailureResponse(ex : BadRequest) : ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(
+            status = HttpStatus.BAD_REQUEST.value(),
+            message = ex.message
+        )
+        return ResponseEntity(errorResponse, HttpStatus.BAD_REQUEST)
+    }
+
     @ExceptionHandler(RuntimeException::class)
     fun handleFailureResponse(ex : RuntimeException) : ResponseEntity<ErrorResponse> {
         val errorResponse = ErrorResponse(

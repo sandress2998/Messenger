@@ -15,6 +15,7 @@ interface UserRepository : ReactiveCrudRepository<User, UUID> {
         VALUES (:id, :username, :tag, :email, :show_email)
         ON CONFLICT (id) DO UPDATE
         SET username = :username, tag = :tag, email = :email, show_email = :show_email
+        RETURNING *;
     """)
     fun upsert(
         @Param("id") userId: UUID,
@@ -22,7 +23,9 @@ interface UserRepository : ReactiveCrudRepository<User, UUID> {
         @Param("tag") tag: String,
         @Param("email") email: String,
         @Param("show_email") showEmail: Boolean
-    ): Mono<Void>
+    ): Mono<User>
+
+    fun existsByTag(tag: String): Mono<Boolean>
 
     fun findUserById(id : UUID) : Mono<User>
 

@@ -106,7 +106,7 @@ class ChatController(
     // здесь кончаются запросы, которые протестированы
     @GetMapping("/{chatId}/member")
     fun getUserInChat(
-        @RequestHeader("X-UserId") userId: UUID, // userId того, кто хочет добавить другого человека в чат
+        @RequestHeader("X-UserId") userId: UUID,
         @PathVariable("chatId") chatId: UUID
     ): Mono<ChatMemberInfo> {
         return chatService.getChatMemberId(chatId, userId)

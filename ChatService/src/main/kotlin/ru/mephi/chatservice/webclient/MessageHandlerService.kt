@@ -22,9 +22,8 @@ class MessageHandlerService(
                 response.createException().flatMap { Mono.error(it) }
             }
             .bodyToMono(Void::class.java)
-            .onErrorResume { e ->
+            .doOnError { e ->
                 println("Error while creating message read receipt for user $userId in chat $chatId: ${e.message}")
-                Mono.error(RuntimeException("Failed to create message read receipt for user $userId in chat $chatId: ${e.message}"))
             }
     }
 
@@ -37,9 +36,8 @@ class MessageHandlerService(
                 response.createException().flatMap { Mono.error(it) }
             }
             .bodyToMono(Void::class.java)
-            .onErrorResume { e ->
+            .doOnError { e ->
                 println("Error while deleting message read receipt for user $userId in chat $chatId: ${e.message}")
-                Mono.error(RuntimeException("Failed to delete message read receipt for user $userId in chat $chatId: ${e.message}"))
             }
     }
 
@@ -51,12 +49,12 @@ class MessageHandlerService(
                 response.createException().flatMap { Mono.error(it) }
             }
             .bodyToMono(Void::class.java)
-            .onErrorResume { e ->
+            .doOnError { e ->
                 println("Error while deleting message read receipts for chat $chatId: ${e.message}")
-                Mono.error(RuntimeException("Failed to delete message read receipts for chat $chatId"))
             }
     }
 
+    /* Больше не нужна
     private fun handleErrorResponse(response: ClientResponse): Mono<FailureResult> {
         return Mono.error(
             WebClientResponseException.create(
@@ -68,4 +66,5 @@ class MessageHandlerService(
             )
         )
     }
+     */
 }

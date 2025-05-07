@@ -11,6 +11,7 @@ import ru.mephi.userservice.model.dto.UpdateUserRequest
 import ru.mephi.userservice.database.entity.User
 import ru.mephi.userservice.model.exception.NotFoundException
 import ru.mephi.userservice.database.repository.UserRepository
+import ru.mephi.userservice.model.exception.BadRequest
 import ru.mephi.userservice.webclient.AuthService
 import ru.mephi.userservice.webclient.PresenceService
 import java.util.*
@@ -28,11 +29,16 @@ class UserService(
     fun createUser(user : CreateUserRequest): Mono<User> {
         val (userId, username, tag, email, showEmail) = user
 
-        return userRepository.upsert(userId, username, tag, email, showEmail)
-            .thenReturn(User(id = userId, username = username, tag = tag, email = email, showEmail = showEmail))
+        return userRepository.existsByTag(tag)
+            .flatMap { exists ->
+                if (!exists) {
+                    userRepository.upsert(userId, username, tag, email, showEmail)
+                } else {
+                    Mono.error(BadRequest("User with such tag already exists"))
+                }
+            }
     }
 
-    @Transactional
     fun updateUser(userId: UUID, request: UpdateUserRequest): Mono<User> {
         val (username, tag, email, showEmail) = request
         return userRepository.findUserById(userId)

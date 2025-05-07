@@ -16,13 +16,12 @@ class UserService (
             .uri("/users/{userId}", userId)
             //.header("X-UserId", userId.toString())
             .retrieve()
-            .onStatus(HttpStatusCode::isError) { response ->
+            .onStatus(HttpStatusCode::is4xxClientError) { response ->
                 response.createException().flatMap { Mono.error(it) }
             }
             .bodyToMono(UserInfo::class.java)
-            .onErrorResume { e ->
+            .doOnError { e ->
                 println("Error while fetching user info for user $userId: ${e.message}")
-                Mono.error(RuntimeException("Failed to fetch user info for user $userId: ${e.message}"))
             }
     }
 

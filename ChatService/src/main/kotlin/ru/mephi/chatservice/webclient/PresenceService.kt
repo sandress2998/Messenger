@@ -22,9 +22,8 @@ class PresenceService (
             }
             .bodyToMono(UserActivityStatus::class.java)
             .map { it.status }
-            .onErrorResume { e ->
+            .doOnError { e ->
                 println("Error while fetching user activity status for user $userId: ${e.message}")
-                Mono.error(RuntimeException("Failed to fetch user activity status for user $userId: ${e.message}"))
             }
     }
 }

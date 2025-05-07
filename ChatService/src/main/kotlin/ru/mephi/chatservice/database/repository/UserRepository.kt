@@ -5,7 +5,7 @@ import org.springframework.stereotype.Repository
 import reactor.core.publisher.Mono
 import java.util.*
 
-// хоть и есть user-service (микросервис), здесь элементарные операции по работе пользователями
+// хоть и есть user-service (микросервис), здесь только read операции по работе пользователями
 @Repository
 class UserRepository(private val databaseClient: DatabaseClient) {
 

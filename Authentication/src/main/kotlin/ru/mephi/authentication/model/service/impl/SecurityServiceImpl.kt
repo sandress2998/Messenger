@@ -56,6 +56,7 @@ class SecurityServiceImpl (
             .switchIfEmpty(Mono.error(UnauthorizedException("User with such an email $email not found")))
     }
 
+    @Transactional
     @Timed(
         value = "business.operation.time",  description = "Time taken to execute business operations",
         extraTags = ["operation", "$CLASS_NAME.signup"]  // пары ключ-значение

@@ -23,7 +23,8 @@ class RoutingConfiguration {
             }
             .route("chat_route") { r ->
                 r.path("/chats", "/chats/{chatId}", "/chats/{chatId}/members",
-                    "/chats/{chatId}/members/{memberId}", "/chats/{chatsId}/users")
+                    "/chats/{chatId}/members/{memberId}", "/chats/{chatsId}/users",
+                    "/chats/{chatId}/member")
                     .and()
                     .method(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
                     .uri("lb://chat-service:8082") // Проксирование на chat-service

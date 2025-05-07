@@ -52,9 +52,6 @@ class TimerAspectConfig(
             is Mono<*> -> {
                 val startTime = System.nanoTime()
                 result
-                    .doOnSubscribe {
-                        // Дополнительные метрики при необходимости
-                    }
                     .doOnSuccess {
                         timer.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
                     }
@@ -66,9 +63,6 @@ class TimerAspectConfig(
             is Flux<*> -> {
                 val startTime = System.nanoTime()
                 result
-                    .doOnSubscribe {
-                        // Дополнительные метрики при необходимости
-                    }
                     .doOnComplete {
                         timer.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
                     }
