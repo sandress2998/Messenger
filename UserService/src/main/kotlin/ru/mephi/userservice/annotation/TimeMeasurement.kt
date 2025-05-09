@@ -2,12 +2,5 @@ package ru.mephi.userservice.annotation
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class TimeHttpRequest
+annotation class TimeHttpRequest(val method: String = "", val uri: String = "")
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class TimeDatabaseQuery
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class TimeBusinessOperation(val value: String = "")

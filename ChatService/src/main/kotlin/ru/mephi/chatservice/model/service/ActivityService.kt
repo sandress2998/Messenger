@@ -1,5 +1,6 @@
 package ru.mephi.chatservice.model.service
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
@@ -23,6 +24,7 @@ class ActivityService (
     private val kafkaTemplate: KafkaTemplate<String, ActivityChangeOutgoingMessage>,
     private val presenceService: PresenceService
 ) {
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun handleActivityChangeMessage(message: ActivityChangeIngoingMessage): Mono<Void> {
         return when (message.status) {
             ActivityStatus.ACTIVE -> handleActiveUser(message.userId)
@@ -30,6 +32,7 @@ class ActivityService (
         }
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getActivityStatus(userId: UUID, chatId: UUID): Mono<ActivityStatus> {
         return activityRepository.isMemberActive(userId, chatId)
             .map { isActive ->
@@ -40,19 +43,23 @@ class ActivityService (
             }
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun deleteFromChat(userId: UUID, chatId: UUID): Mono<Void> {
         return activityRepository.deleteFromChat(userId, chatId)
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun addToChat(userId: UUID, chatId: UUID): Mono<Boolean> {
         return activityRepository.addToChat(userId, chatId)
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun deleteChat(chatId: UUID): Mono<Void> {
         return activityRepository.deleteChat(chatId)
     }
 
     // может быть случай, что пользователь вообще не имеет чатов. Тогда надо сделать запрос на presence-service
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getUserActivityStatus(userId: UUID): Mono<ActivityStatus> {
         return chatMembersRepository.findRandomChatIdsByUserId(userId)
             .flatMap { chatId ->
@@ -75,11 +82,13 @@ class ActivityService (
             }
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getActiveMembers(chatId: UUID): Mono<List<UUID>> {
         return activityRepository.getActiveChatMembers(chatId)
             .collectList()
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getActiveUsersInChat(chatId: UUID): Flux<UserId> {
         return activityRepository.getActiveChatMembers(chatId)
             .map { UserId(it) }

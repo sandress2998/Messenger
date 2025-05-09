@@ -26,7 +26,7 @@ class RoutingConfiguration {
                     "/chats/{chatId}/members/{memberId}", "/chats/{chatsId}/users",
                     "/chats/{chatId}/member")
                     .and()
-                    .method(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE)
+                    .method(HttpMethod.GET, HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE, HttpMethod.PATCH)
                     .uri("lb://chat-service:8082") // Проксирование на chat-service
             }
             .route("user_update_route") { r ->

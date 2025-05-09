@@ -1,5 +1,6 @@
 package ru.mephi.presence.database
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Repository
@@ -18,6 +19,9 @@ class StatusRepository(
 ) {
     val timeToLiveInMinutes: Duration = Duration.ofMinutes(securityProperties.jwtTimeoutInMinutes)
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun setActive(userId: UUID): Mono<Void> {
         val key = "user_activity:$userId"
         return redisTemplate.opsForValue().set(key, ActivityStatus.ACTIVE.toString())
@@ -25,12 +29,18 @@ class StatusRepository(
             .then()
     }
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun setInactive(userId: UUID): Mono<Void> {
         val key = "user_activity:$userId"
         return redisTemplate.opsForValue().delete(key)
             .then()
     }
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun isActive(userId: UUID): Mono<Boolean> {
         val key = "user_activity:$userId"
         return redisTemplate.opsForValue().get(key)
@@ -38,6 +48,9 @@ class StatusRepository(
             .switchIfEmpty(Mono.just(false))
     }
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     private fun updateTTL(key: String): Mono<Boolean> {
         return redisTemplate.expire(key, timeToLiveInMinutes)
     }

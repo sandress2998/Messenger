@@ -18,5 +18,7 @@ data class ChatMember(
     val role: ChatRole = ChatRole.MEMBER,
 
     @Id
-    val id: UUID? = null
+    val id: UUID? = null,
+
+    var excluded: Boolean = false
 )

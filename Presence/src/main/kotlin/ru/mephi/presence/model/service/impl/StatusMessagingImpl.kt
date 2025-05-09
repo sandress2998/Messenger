@@ -1,5 +1,6 @@
 package ru.mephi.presence.model.service.impl
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import ru.mephi.presence.model.ActivityStatus
@@ -12,6 +13,9 @@ import ru.mephi.presence.model.service.StatusService
 class StatusMessagingImpl(
     private val statusService: StatusService,
 ): StatusMessaging {
+    @Timed(
+        value = "business.operation.time",  description = "Time taken to execute business operations"
+    )
     override fun handleChatActivityMessage(message: ActivityChangeEvent): Mono<Void> {
         val userId = message.userId
         val status = message.status

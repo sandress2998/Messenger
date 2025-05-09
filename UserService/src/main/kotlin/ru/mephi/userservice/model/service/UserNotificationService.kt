@@ -1,5 +1,6 @@
 package ru.mephi.userservice.model.service
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.support.KafkaHeaders
 import org.springframework.messaging.support.MessageBuilder
@@ -14,6 +15,7 @@ import java.util.*
 class UserNotificationService (
     private val kafkaTemplate: KafkaTemplate<String, UserActionOutgoingMessage>
 ) {
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun notifyAboutUserAction(userId: UUID, action: UserAction, userInfo: UserInfo? = null): Mono<Void> {
         return sendUserActionMessage(UserActionOutgoingMessage(userId, action, userInfo))
     }

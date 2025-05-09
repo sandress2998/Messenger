@@ -1,5 +1,6 @@
 package ru.mephi.chatservice.database.repository
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.data.r2dbc.repository.Modifying
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
@@ -13,23 +14,39 @@ import java.util.*
 
 @Repository
 interface ChatMembersRepository: ReactiveCrudRepository<ChatMember, UUID> {
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getById(id: UUID): Mono<ChatMember>
 
+    @Modifying
+    @Query("UPDATE chats_members SET excluded = true WHERE id = :id AND NOT excluded;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun deleteChatMemberById(id: UUID): Mono<Void>
 
+    @Query("SELECT * FROM chats_members WHERE user_id = :userId AND NOT excluded;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getChatMembersByUserId(userId: UUID): Flux<ChatMember>
 
+    @Query("SELECT * FROM chats_members WHERE chat_id = :chatId AND NOT excluded;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getChatMembersByChatId(chatId: UUID): Flux<ChatMember>
 
+    // функция реально удаляет из базы данных всех участников, а не просто присваивает excluded = true
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun deleteChatMembersByChatId(chatId: UUID): Mono<Void>
 
+    @Query("SELECT * FROM chats_members WHERE chat_id=:chatId AND user_id = :userId AND NOT excluded;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getChatMemberByChatIdAndUserId(chatId: UUID, userId: UUID): Mono<ChatMember>
 
+    @Query("SELECT count(*) FROM chats_members WHERE chat_id = :chatId AND NOT excluded;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun countByChatId(chatId: UUID): Mono<Long>
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun save(chatMember: ChatMember): Mono<ChatMember>
 
-    @Query("SELECT COUNT(*) FROM chats_members WHERE chat_id = :chatId AND  role = 'ADMIN'")
+    @Query("SELECT COUNT(*) FROM chats_members WHERE chat_id = :chatId AND role = 'ADMIN' AND NOT excluded")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getAdminCount(chatId: UUID): Mono<Long>
 
     @Modifying
@@ -38,15 +55,19 @@ interface ChatMembersRepository: ReactiveCrudRepository<ChatMember, UUID> {
         SET role = :role
         WHERE id = :memberId;
     """)
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun update(memberId: UUID, role: ChatRole): Mono<Long>
 
-    @Query("SELECT chat_id FROM chats_members WHERE user_id = :userId")
+    @Query("SELECT chat_id FROM chats_members WHERE user_id = :userId AND NOT excluded")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getChatsIdByUserId(userId: UUID): Flux<UUID>
 
-    @Query("SELECT user_id FROM chats_members WHERE chat_id = :chatId")
+    @Query("SELECT user_id FROM chats_members WHERE chat_id = :chatId AND NOT excluded")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getUsersIdByChatId(chatId: UUID): Flux<UUID>
 
-    @Query("SELECT chat_id FROM chats_members WHERE user_id = :userId ORDER BY RANDOM() LIMIT 2")
+    @Query("SELECT chat_id FROM chats_members WHERE user_id = :userId AND NOT excluded ORDER BY RANDOM() LIMIT 2")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun findRandomChatIdsByUserId(userId: UUID): Flux<UUID>
 
     @Query(
@@ -55,6 +76,7 @@ interface ChatMembersRepository: ReactiveCrudRepository<ChatMember, UUID> {
         SELECT id, user_id 
         FROM chats_members 
         WHERE chat_id = :chatId 
+        AND NOT excluded
         ORDER BY random() 
         LIMIT 1
     )
@@ -64,5 +86,9 @@ interface ChatMembersRepository: ReactiveCrudRepository<ChatMember, UUID> {
     RETURNING *;
     """
     )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun promoteRandomMemberToAdmin(chatId: UUID): Mono<ChatMember>
+
+    @Query("UPDATE chats_members SET excluded = false, role = 'MEMBER' WHERE chat_id = :chatId AND user_id = :userId AND excluded RETURNING *;")
+    fun returnUserToChat(chatId: UUID, userId: UUID): Mono<ChatMember>
 }

@@ -2,4 +2,4 @@ package ru.mephi.authentication.annotation
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class TimeHttpRequest(val uri: String = "")
+annotation class TimeHttpRequest(val method: String = "", val uri: String = "")

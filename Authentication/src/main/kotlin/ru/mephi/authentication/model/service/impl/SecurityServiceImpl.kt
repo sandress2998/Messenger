@@ -15,7 +15,6 @@ import ru.mephi.authentication.model.dto.response.*
 import ru.mephi.authentication.model.exception.UnauthorizedException
 import ru.mephi.authentication.model.service.JwtService
 import ru.mephi.authentication.model.service.PasswordService
-import ru.mephi.authentication.model.service.SecurityService.Companion.CLASS_NAME
 import ru.mephi.authentication.model.service.RefreshService
 import ru.mephi.authentication.model.service.SecurityService
 import ru.mephi.authentication.webclient.UserService
@@ -32,10 +31,7 @@ class SecurityServiceImpl (
     val encoder = BCryptPasswordEncoder()
     private val log: Logger = LoggerFactory.getLogger(SecurityServiceImpl::class.java)
 
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.signin"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun signin(request: SigninRequest): Mono<SigninResponse> {
         val password = request.password
         val email = request.email
@@ -57,10 +53,7 @@ class SecurityServiceImpl (
     }
 
     @Transactional
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.signup"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun signup(request: SignupRequest): Mono<SignupResponse> {
         val (username, tag, email, showEmail, password) = request
 
@@ -101,10 +94,7 @@ class SecurityServiceImpl (
             )
     }
 
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.refresh"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun refresh(request: RefreshRequest): Mono<RefreshResponse> {
         val email: String = request.email
         val refreshToken = request.refreshToken
@@ -128,10 +118,7 @@ class SecurityServiceImpl (
             .switchIfEmpty(Mono.error(UnauthorizedException("User with such an email $email not found")))
     }
 
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.signout"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun signout(userId: String, request: SignoutRequest): Mono<SignoutResponse> {
 
         return refreshService.removeToken(userId, request.refresh)
@@ -144,10 +131,7 @@ class SecurityServiceImpl (
             }
     }
 
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.invalidateAllTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun invalidateAllTokens(userId: String): Mono<InvalidateAllResponse> {
 
         return refreshService.removeAllTokens(userId)
@@ -161,10 +145,7 @@ class SecurityServiceImpl (
     }
 
     @Transactional
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.deleteUser"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun deleteUser(userId: UUID): Mono<Void> {
         return passwordService.removeById(userId)
     }

@@ -1,8 +1,11 @@
 package ru.mephi.websocket.handler
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.module.kotlin.jacksonMapperBuilder
 import com.fasterxml.jackson.module.kotlin.kotlinModule
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketHandler
@@ -17,11 +20,16 @@ import java.util.*
 @Component
 class SimpleWebSocketHandler(
     private val sessionService: SessionService,
-    private val kafkaProducerService: KafkaProducerService
+    private val kafkaProducerService: KafkaProducerService,
+    private val registry: MeterRegistry
 ): WebSocketHandler {
-    private val objectMapper: JsonMapper = jacksonMapperBuilder()
-        .addModule(kotlinModule())
-        .build()
+    val successfulSessionConnectionCounter = Counter.builder("websocket.session.total")
+        .tag("status", "successful")
+        .register(registry)
+
+    val badSessionConnectionCounter = Counter.builder("websocket.session.total")
+        .tag("status", "unsuccessful")
+        .register(registry)
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         println("Connection could be establish")
@@ -31,6 +39,7 @@ class SimpleWebSocketHandler(
             try {
                 UUID.fromString(it)
             } catch (e: IllegalArgumentException) {
+                badSessionConnectionCounter.increment()
                 return session.close(CloseStatus.NOT_ACCEPTABLE.withReason("UserId has incorrect format"))
             }
         }
@@ -49,9 +58,11 @@ class SimpleWebSocketHandler(
         // Обработка сообщений
         return sessionService.addSession(userId, session)
             .doOnSuccess {
+                successfulSessionConnectionCounter.increment()
                 println("Successfully added session.")
             }
             .doOnError { error ->
+                badSessionConnectionCounter.increment()
                 println("Error during Mono.zip: ${error.message}")
             }
             .then (

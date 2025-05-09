@@ -1,5 +1,6 @@
 package ru.mephi.messagehandler.database.repository
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository
 import org.springframework.stereotype.Repository
@@ -11,22 +12,34 @@ import java.util.*
 
 @Repository
 interface MessageRepository: ReactiveMongoRepository<Message, UUID> {
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun findByChatIdAndTimestampBefore(
         chatId: UUID,
         timestamp: Instant,
         pageable: Pageable
     ): Flux<Message>
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun findByChatIdAndTextContaining(
         chatId: UUID,
         text: String
     ): Flux<Message>
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun findByChatIdAndTimestampAfter(
         chatId: UUID,
         timestamp: Instant
     ): Flux<Message>
 
+    @Timed(
+        value = "db.query.time", description = "Time taken to execute database queries"
+    )
     fun deleteMessageByChatId(chatId: UUID): Mono<Void>
 }
 

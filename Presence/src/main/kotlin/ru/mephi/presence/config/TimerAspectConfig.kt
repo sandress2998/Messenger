@@ -6,33 +6,132 @@ import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.annotation.Around
 import org.aspectj.lang.annotation.Aspect
 import org.springframework.stereotype.Component
-import ru.mephi.presence.annotation.TimeBusinessOperation
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import ru.mephi.presence.annotation.TimeHttpRequest
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+
 
 @Aspect
 @Component
-class TimerAspectConfig(private val meterRegistry: MeterRegistry) {
-    // Инициализируем таймеры один раз при создании аспекта
-    private val httpRequestTimer = getTimer(
-        "http.request.time",
-        "Time taken to process HTTP requests",
-        "layer", "controller"
-    )
+class TimerAspectConfig(
+    private val meterRegistry: MeterRegistry
+) {
+    companion object {
+        private val httpRequestTimers = ConcurrentHashMap<String, Timer>()
+    }
 
-    private val dbQueryTimer = getTimer(
-        "db.query.time",
-        "Time taken to execute database queries",
-        "type", "sql"
-    )
+    fun setHttpRequestTimer(uri: String, method: String) {
+        httpRequestTimers[uri] = getTimer(
+            "http.request.time",
+            "Time taken to process HTTP requests",
+            "layer", "controller",
+            "uri", uri,
+            "method", method
+        )
+    }
 
-    // Для бизнес-операций используем мапу, так как имена динамические
-    private val businessTimers = ConcurrentHashMap<String, Timer>()
+    private fun getTimer(vararg tags: String): Timer =
+        Timer.builder("http.request.time")
+            .description("Time taken to process HTTP requests")
+            .tags(*tags)
+            .register(meterRegistry)
+
+    @Around("@annotation(timeHttpRequest)")
+    fun measureHttpRequest(
+        joinPoint: ProceedingJoinPoint,
+        timeHttpRequest: TimeHttpRequest
+    ): Any? {
+        val timer = httpRequestTimers[timeHttpRequest.uri] ?: return joinPoint.proceed()
+
+        return measureTime(joinPoint, timer)
+    }
+
+    private fun measureTime(joinPoint: ProceedingJoinPoint, timer: Timer): Any? {
+        return when (val result = joinPoint.proceed()) {
+            is Mono<*> -> {
+                val startTime = System.nanoTime()
+                result
+                    .doOnSuccess {
+                        timer.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
+                    }
+                    .doOnError {
+                        timer.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
+                    }
+            }
+
+            is Flux<*> -> {
+                val startTime = System.nanoTime()
+                result
+                    .doOnComplete {
+                        timer.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
+                    }
+                    .doOnError {
+                        timer.record(System.nanoTime() - startTime, TimeUnit.NANOSECONDS)
+                    }
+            }
+
+            else -> timer.recordCallable { result }
+        }
+    }
+}
+
+
+
+/* Это некорректно для WebFlux, но корректно для Spring MVC
+@Aspect
+@Component
+class TimerAspectConfig(
+    private val applicationProperties: ApplicationProperties,
+    private val meterRegistry: MeterRegistry
+) {
+    companion object {
+        private val httpRequestTimers = ConcurrentHashMap<String, Timer>()
+
+        private val databaseSQLTimers = ConcurrentHashMap<String, Timer>()
+
+        private val databaseNoSQLTimers = ConcurrentHashMap<String, Timer>()
+
+        private val businessTimers = ConcurrentHashMap<String, Timer>()
+    }
+
+    fun setHttpRequestTimer(uri: String) {
+        httpRequestTimers[uri] = getTimer(
+            "http.request.time",
+            "Time taken to process HTTP requests",
+            "layer", "controller",
+            "uri", uri,
+            "application_name", applicationProperties.applicationName ?: "Unknown"
+        )
+    }
+
+    fun setNoSQLDatabaseTimer(functionName: String){
+        businessTimers[functionName] = getTimer(
+            "db.query.time",
+            "Time taken to execute database queries",
+            "type", "nosql",
+            "operation", functionName,
+            "application_name", applicationProperties.applicationName ?: "Unknown"
+        )
+    }
+
+    fun setSQLDatabaseTimer(functionName: String){
+        businessTimers[functionName] = getTimer(
+            "db.query.time",
+            "Time taken to execute database queries",
+            "type", "sql",
+            "operation", functionName,
+            "application_name", applicationProperties.applicationName ?: "Unknown"
+        )
+    }
 
     fun setBusinessTimer(functionName: String) {
         businessTimers[functionName] = getTimer(
             "business.operation.time",
             "Time taken to execute business operations",
-            "operation", functionName
+            "operation", functionName,
+            "application_name", applicationProperties.applicationName ?: "Unknown"
         )
     }
 
@@ -42,14 +141,29 @@ class TimerAspectConfig(private val meterRegistry: MeterRegistry) {
             .tags(*tags)
             .register(meterRegistry)
 
-    @Around("@annotation(ru.mephi.presence.annotation.TimeHttpRequest)")
-    fun measureHttpRequest(joinPoint: ProceedingJoinPoint): Any? {
-        return httpRequestTimer.recordCallable { joinPoint.proceed() }
+    @Around("@annotation(timeHttpRequest)")
+    fun measureHttpRequest(
+        joinPoint: ProceedingJoinPoint,
+        timeHttpRequest: TimeHttpRequest
+    ): Any? {
+        return httpRequestTimers[timeHttpRequest.uri]?.recordCallable { joinPoint.proceed() }
     }
 
-    @Around("@annotation(ru.mephi.presence.annotation.TimeDatabaseQuery)")
-    fun measureDatabaseQuery(joinPoint: ProceedingJoinPoint): Any? {
-        return dbQueryTimer.recordCallable { joinPoint.proceed() }
+    @Around("@annotation(timeNoSQLOperation)")
+    fun measureDatabaseNoSQLQuery(
+        joinPoint: ProceedingJoinPoint,
+        timeNoSQLOperation: TimeDatabaseNoSQLQuery
+    ): Any? {
+        return databaseNoSQLTimers[timeNoSQLOperation.value]?.recordCallable { joinPoint.proceed() }
+    }
+
+    @Around("@annotation(timeSQLOperation)")
+    fun measureDatabaseSQLQuery(
+        joinPoint: ProceedingJoinPoint,
+        timeSQLOperation: TimeDatabaseSQLQuery
+    ): Any? {
+        // joinPoint.signature.name - не очень хорошо, потому что надо будет создавать метрики динамически
+        return databaseSQLTimers[timeSQLOperation.value]?.recordCallable { joinPoint.proceed() }
     }
 
     @Around("@annotation(timeBusinessOperation)")
@@ -60,3 +174,4 @@ class TimerAspectConfig(private val meterRegistry: MeterRegistry) {
         return businessTimers[timeBusinessOperation.value]?.recordCallable { joinPoint.proceed() }
     }
 }
+*/

@@ -10,43 +10,21 @@ import java.util.*
 
 @Repository
 interface PasswordRepository: ReactiveCrudRepository<Password, Long> {
-    companion object {
-        const val CLASS_NAME = "PasswordRepository"
-    }
-
-    @Timed(  // Делегируем стандартному @Timed
-        value = "db.query.time", description = "Time taken to execute database queries",
-        extraTags = ["type", "sql", "operation", "$CLASS_NAME.findByEmail"]
-    )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun findByEmail(email: String): Mono<Password>
 
-    @Timed(  // Делегируем стандартному @Timed
-        value = "db.query.time", description = "Time taken to execute database queries",
-        extraTags = ["type", "sql", "operation", "$CLASS_NAME.findById"]
-    )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun findById(userId: UUID): Mono<Password>
 
-    @Timed(  // Делегируем стандартному @Timed
-        value = "db.query.time", description = "Time taken to execute database queries",
-        extraTags = ["type", "sql", "operation", "$CLASS_NAME.existsById"]
-    )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun existsById(userId: UUID): Mono<Boolean>
 
-    @Timed(  // Делегируем стандартному @Timed
-        value = "db.query.time", description = "Time taken to execute database queries",
-        extraTags = ["type", "sql", "operation", "$CLASS_NAME.existsByEmail"]
-    )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun existsByEmail(email: String): Mono<Boolean>
 
-    @Timed(  // Делегируем стандартному @Timed
-        value = "db.query.time", description = "Time taken to execute database queries",
-        extraTags = ["type", "sql", "operation", "$CLASS_NAME.removeByEmail"]
-    )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun removeByEmail(email: String): Mono<Boolean>
 
-    @Timed(  // Делегируем стандартному @Timed
-        value = "db.query.time", description = "Time taken to execute database queries",
-        extraTags = ["type", "sql", "operation", "$CLASS_NAME.removeByEmail"]
-    )
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun removeById(id: UUID): Mono<Void>
 }

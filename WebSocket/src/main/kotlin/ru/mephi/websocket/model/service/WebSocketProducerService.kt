@@ -1,7 +1,6 @@
 package ru.mephi.websocket.model.service
 
 import reactor.core.publisher.Mono
-import ru.mephi.websocket.dto.kafka.receive.*
 import ru.mephi.websocket.model.dto.kafka.receive.*
 
 interface WebSocketProducerService {

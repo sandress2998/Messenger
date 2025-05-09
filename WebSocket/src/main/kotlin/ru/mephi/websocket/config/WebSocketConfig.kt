@@ -1,5 +1,6 @@
 package ru.mephi.websocket.config
 
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.reactive.HandlerMapping
@@ -12,11 +13,12 @@ import ru.mephi.websocket.model.service.SessionService
 @Configuration
 class WebSocketConfig(
     private val sessionService: SessionService,
-    private val kafkaProducerService: KafkaProducerService
+    private val kafkaProducerService: KafkaProducerService,
+    private val registry: MeterRegistry
 ) {
     @Bean
     fun webSocketHandler(): WebSocketHandler {
-        return SimpleWebSocketHandler(sessionService, kafkaProducerService)
+        return SimpleWebSocketHandler(sessionService, kafkaProducerService, registry)
     }
 
     @Bean

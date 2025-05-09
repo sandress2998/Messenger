@@ -15,8 +15,9 @@ class ChatMembersDatabaseInitializer(private val databaseClient: DatabaseClient)
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 chat_id UUID NOT NULL REFERENCES chats(id),
                 user_id UUID NOT NULL,
+                excluded Boolean NOT NULL DEFAULT false,
                 UNIQUE (chat_id, user_id),
-                role VARCHAR(255) NOT NULL
+                role VARCHAR(20) NOT NULL
             )
             """
         ).fetch().rowsUpdated().subscribe()

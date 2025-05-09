@@ -1,5 +1,6 @@
 package ru.mephi.presence.model.service.impl
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import ru.mephi.presence.database.StatusRepository
@@ -13,14 +14,23 @@ import java.util.*
 class StatusServiceImpl(
     private val statusRepository: StatusRepository,
 ): StatusService {
+    @Timed(
+        value = "business.operation.time",  description = "Time taken to execute business operations"
+    )
     override fun setActive(userId: UUID): Mono<Void> {
         return statusRepository.setActive(userId)
     }
 
+    @Timed(
+        value = "business.operation.time",  description = "Time taken to execute business operations"
+    )
     override fun setInactive(userId: UUID): Mono<Void> {
         return statusRepository.setInactive(userId)
     }
 
+    @Timed(
+        value = "business.operation.time",  description = "Time taken to execute business operations"
+    )
     override fun isActive(userId: UUID): Mono<UserActivityResponse> {
         return statusRepository.isActive(userId)
             .map { isActive ->

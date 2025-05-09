@@ -1,15 +1,17 @@
 package ru.mephi.chatservice.model.service
 
-import ru.mephi.chatservice.database.entity.Chat
-import ru.mephi.chatservice.database.entity.ChatMember
-import ru.mephi.chatservice.database.repository.ChatMembersRepository
-import ru.mephi.chatservice.database.repository.ChatRepository
+import io.micrometer.core.annotation.Timed
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.reactive.TransactionalOperator
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import ru.mephi.chatservice.database.entity.Chat
+import ru.mephi.chatservice.database.entity.ChatMember
+import ru.mephi.chatservice.database.repository.ChatMembersRepository
+import ru.mephi.chatservice.database.repository.ChatRepository
+import ru.mephi.chatservice.database.repository.UserRepository
 import ru.mephi.chatservice.model.ActivityStatus
 import ru.mephi.chatservice.model.ChatAction
 import ru.mephi.chatservice.model.ChatMemberAction
@@ -17,10 +19,9 @@ import ru.mephi.chatservice.model.ChatRole
 import ru.mephi.chatservice.model.dto.kafka.UserAction
 import ru.mephi.chatservice.model.dto.kafka.UserActionForChatMembersIngoingMessage
 import ru.mephi.chatservice.model.dto.rest.*
-import ru.mephi.chatservice.model.exception.NotFoundException
 import ru.mephi.chatservice.model.exception.AccessDeniedException
-import ru.mephi.chatservice.model.exception.FailureResult
-import ru.mephi.chatservice.database.repository.UserRepository
+import ru.mephi.chatservice.model.exception.BadRequestException
+import ru.mephi.chatservice.model.exception.NotFoundException
 import ru.mephi.chatservice.webclient.MessageHandlerService
 import ru.mephi.chatservice.webclient.UserService
 import java.util.*
@@ -36,11 +37,9 @@ class ChatService(
     private val activityService: ActivityService,
     private val userService: UserService
 ) {
-    // ВНИМАНИЕ! В НЕКОТОРЫХ ФУНКЦИЯХ ПОСТАВЛЕНЫ ЗАГЛУШКИ С ActivityStatus.ACTIVE
 
-    // Операции только с чатами
-    // @Transactional только для документации, они никак не управляют транзакциями
     @Transactional
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun createChat(chat: Chat, userInitiatorId: UUID): Mono<ChatCreationResponse> {
         return chatRepository.save(chat)
             .flatMap { savedChat ->
@@ -58,6 +57,7 @@ class ChatService(
     }
 
     @Transactional
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun updateChat(chat: Chat, chatId: UUID, userId: UUID): Mono<RequestResult> {
         val name = chat.name
         return isUserAdminInChat(chatId, userId)
@@ -78,6 +78,7 @@ class ChatService(
     }
 
     @Transactional
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun deleteChat(chatId: UUID, userInitiatorId: UUID): Mono<RequestResult> {
         return isUserAdminInChat(chatId, userInitiatorId)
             .flatMap { isAdmin: Boolean ->
@@ -96,6 +97,7 @@ class ChatService(
             .`as`(transactionalOperator::transactional)
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getChatsInfoByUserId(userId: UUID): Flux<ChatInfo> {
         return chatMembersRepository.getChatMembersByUserId(userId)
             .flatMap { chatMember ->
@@ -104,6 +106,7 @@ class ChatService(
     }
 
     // Сделать пагинацию
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getChatMembersByChatId(chatId: UUID, userInitiatorId: UUID): Flux<MemberInfo> {
         return isUserMemberInChat(chatId, userInitiatorId)
             .flatMapMany { isMember: Boolean ->  // Используем flatMapMany вместо flatMap, т.к. нужно вернуть Flux
@@ -180,6 +183,7 @@ class ChatService(
      */
 
     @Transactional
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun updateChatMemberToChat(chatId: UUID, memberId: UUID, newRole: ChatRole, userInitiatorId: UUID): Mono<RequestResult> {
         return isUserAdminInChat(chatId, userInitiatorId)
             .flatMap { isAdmin: Boolean ->
@@ -194,7 +198,9 @@ class ChatService(
                 Mono.error(NotFoundException("Member not found"))
             }
             .flatMap { fetchedChatMember ->
-                if (newRole == ChatRole.MEMBER && fetchedChatMember.role == ChatRole.ADMIN) {
+                if (fetchedChatMember.excluded) {
+                    Mono.error(NotFoundException("Member not found"))
+                } else if (newRole == ChatRole.MEMBER && fetchedChatMember.role == ChatRole.ADMIN) {
                     isMemberSingleAdmin(chatId, fetchedChatMember)
                 } else {
                     Mono.empty()
@@ -211,6 +217,7 @@ class ChatService(
     }
 
     @Transactional
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun addUserToChat(request: MemberFromUserCreationRequest, chatId: UUID, userInitiatorId: UUID): Mono<MemberInfo> {
         val (tag, role) = request
         return isUserAdminInChat(chatId, userInitiatorId)
@@ -229,7 +236,8 @@ class ChatService(
                 } else {
                     val username = pair.second!!
                     checkIfUserIsAlreadyMember(userId, chatId)
-                        .then(chatMembersRepository.save(ChatMember(chatId, userId, role)))
+                        .then(chatMembersRepository.returnUserToChat(chatId, userId))
+                        .switchIfEmpty(chatMembersRepository.save(ChatMember(chatId, userId, role)))
                         .flatMap { savedChatMember ->
                             val memberId = savedChatMember.id!!
                             messageHandlerService.createMessageReadReceipt(userId, chatId)
@@ -250,6 +258,7 @@ class ChatService(
     }
 
     @Transactional
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun deleteMemberFromChat(chatId: UUID, memberToDeleteId: UUID, userInitiatorId: UUID): Mono<RequestResult> {
         return chatMembersRepository.getById(memberToDeleteId)
             .flatMap { member ->
@@ -270,17 +279,20 @@ class ChatService(
             .`as`(transactionalOperator::transactional)
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun getChatMemberId(chatId: UUID, userId: UUID): Mono<ChatMemberInfo> {
         return chatMembersRepository.getChatMemberByChatIdAndUserId(chatId, userId)
             .map { member -> ChatMemberInfo(member.id!!) }
             .switchIfEmpty( Mono.error(NotFoundException("User is not member of chat $chatId")) )
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun getChatsId(userId: UUID): Flux<ChatId> {
         return chatMembersRepository.getChatsIdByUserId(userId)
             .flatMap { chatId -> Mono.just(ChatId(chatId)) }
     }
 
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun getUserInfoByMemberId(chatId: UUID, memberId: UUID, userInitiatorId: UUID): Mono<UserInfo> {
         return isUserMemberInChat(chatId, userInitiatorId)
             .flatMap { isMember ->
@@ -298,8 +310,9 @@ class ChatService(
     }
 
     @Transactional
-    fun handleUserActionNotification(userActionIngoingMessage: UserActionForChatMembersIngoingMessage): Mono<Void> {
-        val (userId, action) = userActionIngoingMessage
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
+    fun handleUserActionNotification(notification: UserActionForChatMembersIngoingMessage): Mono<Void> {
+        val (userId, action) = notification
         return chatMembersRepository.getChatMembersByUserId(userId)
             .flatMap { chatMember ->
                 val (chatId, _, role, memberId) = chatMember
@@ -330,8 +343,12 @@ class ChatService(
         return chatMembersRepository.countByChatId(chatId)
             .flatMap { membersQuantity ->
                 if (membersQuantity.toInt() == 1) {
-                    chatMembersRepository.deleteById(memberId!!)
+                    deleteChat(chatId, userId)
+                        /*
+                        .then(chatMembersRepository.deleteChatMembersByChatId(chatId))
                         .then(chatRepository.deleteById(chatId))
+                        .then(activityService.deleteChat(chatId))
+                         */
                 } else {
                     chatMembersRepository.getAdminCount(chatId)
                         .flatMap { adminQuantity ->
@@ -402,7 +419,8 @@ class ChatService(
             .then(chatMembersRepository.countByChatId(chatId))
             .flatMap { quantityOfRemained ->
                 if (quantityOfRemained.toInt() == 0) {
-                    chatRepository.deleteById(chatId)
+                    chatMembersRepository.deleteChatMembersByChatId(chatId)
+                        .then(chatRepository.deleteById(chatId))
                 } else {
                     Mono.empty()
                 }
@@ -414,7 +432,7 @@ class ChatService(
             chatMembersRepository.getAdminCount(chatId)
                 .flatMap { adminQuantity ->
                     if (adminQuantity.toInt() == 1) {
-                        Mono.error(FailureResult("Chat must have at least 1 admin"))
+                        Mono.error(BadRequestException(BadRequestException.Cause.ADMIN_ABSENCE))
                     } else {
                         Mono.empty()
                     }
@@ -460,7 +478,7 @@ class ChatService(
         return chatMembersRepository.getChatMembersByChatId(chatId)
             .flatMap { member ->
                 if (member.userId == userId) {
-                    Mono.error<FailureResult>(FailureResult("User is already in chat"))
+                    Mono.error<BadRequestException>(BadRequestException(BadRequestException.Cause.ALREADY_IN_CHAT))
                 } else {
                     Mono.empty()
                 }

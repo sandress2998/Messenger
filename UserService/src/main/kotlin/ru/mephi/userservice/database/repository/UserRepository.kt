@@ -1,5 +1,6 @@
 package ru.mephi.userservice.database.repository
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.data.r2dbc.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.data.repository.reactive.ReactiveCrudRepository
@@ -17,6 +18,7 @@ interface UserRepository : ReactiveCrudRepository<User, UUID> {
         SET username = :username, tag = :tag, email = :email, show_email = :show_email
         RETURNING *;
     """)
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun upsert(
         @Param("id") userId: UUID,
         @Param("username") username: String,
@@ -25,9 +27,12 @@ interface UserRepository : ReactiveCrudRepository<User, UUID> {
         @Param("show_email") showEmail: Boolean
     ): Mono<User>
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun existsByTag(tag: String): Mono<Boolean>
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun findUserById(id : UUID) : Mono<User>
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun deleteUserById(id : UUID): Mono<Void>
 }

@@ -1,20 +1,9 @@
 package ru.mephi.authentication
 
-import jakarta.annotation.PostConstruct
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 import org.springframework.context.annotation.EnableAspectJAutoProxy
-import org.springframework.context.annotation.EnableLoadTimeWeaving
 import org.springframework.scheduling.annotation.EnableScheduling
-import org.springframework.stereotype.Component
-import ru.mephi.authentication.config.TimerAspectConfig
-import ru.mephi.authentication.controller.AuthorizationController
-import ru.mephi.authentication.database.dao.PasswordRepository
-import ru.mephi.authentication.database.dao.RefreshRepository
-import ru.mephi.authentication.model.service.JwtService
-import ru.mephi.authentication.model.service.PasswordService
-import ru.mephi.authentication.model.service.RefreshService
-import ru.mephi.authentication.model.service.SecurityService
 
 @SpringBootApplication
 @EnableScheduling

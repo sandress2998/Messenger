@@ -9,7 +9,6 @@ import ru.mephi.authentication.database.dao.PasswordRepository
 import ru.mephi.authentication.database.dao.RefreshRepository
 import ru.mephi.authentication.database.entity.RefreshToken
 import ru.mephi.authentication.model.exception.UnauthorizedException
-import ru.mephi.authentication.model.service.RefreshService.Companion.CLASS_NAME
 import ru.mephi.authentication.model.service.RefreshService
 import java.util.*
 
@@ -22,10 +21,7 @@ class RefreshServiceImpl(
 
     // User пытается либо зарегистрироваться, либо войти
     @Transactional // как выяснилось, транзакционностью здесь и не пахнет
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.generateToken"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun generateToken(userId: String): Mono<String> {
         val token = UUID.randomUUID().toString()
         val hashedToken = encoder.encode(token)
@@ -45,10 +41,7 @@ class RefreshServiceImpl(
     }
 
     // User пытается по refresh-токен получить access-токен.
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.validateToken"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun validateToken(userId: String, refreshToken: String): Mono<Boolean> {
         val tokensMono: Mono<List<RefreshToken>> = refreshRepository.getActiveTokens(userId)
 
@@ -72,10 +65,7 @@ class RefreshServiceImpl(
     }
 
     @Transactional
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.removeToken"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun removeToken(userId: String, refreshToken: String): Mono<Boolean> {
         return refreshRepository.removeToken(userId, refreshToken)
             .map { quantityOfRemoved ->
@@ -84,10 +74,7 @@ class RefreshServiceImpl(
     }
 
     @Transactional
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.updateToken"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun updateToken(userId: String, refreshToken: String): Mono<String> {
         return removeToken(userId, refreshToken)
             .flatMap {
@@ -96,10 +83,7 @@ class RefreshServiceImpl(
     }
 
     @Transactional
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.removeAllTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     override fun removeAllTokens(userId: String): Mono<Boolean> {
         return refreshRepository.removeAllTokens(userId)
     }

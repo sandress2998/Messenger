@@ -1,5 +1,6 @@
 package ru.mephi.chatservice.database.repository
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.data.redis.core.ReactiveRedisTemplate
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
@@ -17,6 +18,7 @@ class ActivityRepository (
     val redisOpsForList = redisTemplate.opsForList()
     val timeToLiveInMinutes: Duration = Duration.ofMinutes(securityProperties.jwtTimeoutInMinutes)
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun addToChat(userId: UUID, chatId: UUID): Mono<Boolean> {
         val key = "chat_activity:$chatId"
         return redisOpsForList.range(key, 0, -1)
@@ -36,6 +38,7 @@ class ActivityRepository (
 
     }
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun deleteFromChat(userId: UUID, chatId: UUID): Mono<Void> {
         val key = "chat_activity:$chatId"
         return redisOpsForList.range(key, 0, -1)
@@ -50,12 +53,14 @@ class ActivityRepository (
             .then()
     }
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getActiveChatMembers(chatId: UUID): Flux<UUID> {
         val key = "chat_activity:$chatId"
         return redisOpsForList.range(key, 0, -1)
             .map { activeMember -> UUID.fromString(activeMember)  }
     }
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun isMemberActive(userId: UUID, chatId: UUID): Mono<Boolean> {
         val key = "chat_activity:$chatId"
         return redisOpsForList.indexOf(key, userId.toString())
@@ -64,6 +69,7 @@ class ActivityRepository (
             }
     }
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun deleteChat(chatId: UUID): Mono<Void> {
         val key = "chat_activity:$chatId"
         return redisOpsForList.delete(key)

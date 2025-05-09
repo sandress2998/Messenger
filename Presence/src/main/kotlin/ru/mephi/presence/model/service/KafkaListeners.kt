@@ -17,7 +17,6 @@ class KafkaListeners(
         .addModule(kotlinModule())
         .build()
 
-
     @KafkaListener(topics = ["activity-status-change"], groupId = "presence-service", containerFactory = "messageKafkaListenerContainerFactory")
     fun chatActivityListener(message: String): Mono<Void> {
         // Десериализуем JSON

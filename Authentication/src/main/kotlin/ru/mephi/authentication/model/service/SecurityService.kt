@@ -9,10 +9,6 @@ import ru.mephi.authentication.model.dto.response.*
 import java.util.*
 
 interface SecurityService {
-    companion object {
-        const val CLASS_NAME = "SecurityService"
-    }
-
     fun signin(request: SigninRequest): Mono<SigninResponse>
 
     fun signup(request: SignupRequest): Mono<SignupResponse>

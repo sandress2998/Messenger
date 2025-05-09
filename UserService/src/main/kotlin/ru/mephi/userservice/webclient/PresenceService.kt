@@ -1,5 +1,8 @@
 package ru.mephi.userservice.webclient
 
+import io.micrometer.core.annotation.Timed
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.http.HttpStatusCode
 import org.springframework.stereotype.Service
@@ -11,8 +14,17 @@ import java.util.*
 
 @Service
 class PresenceService(
-    private val presenceServiceWebClient: WebClient
+    private val presenceServiceWebClient: WebClient,
+    private val registry: MeterRegistry
 ) {
+    private final val webClientErrors: Counter = Counter.builder("webclient.error")
+        .tag("webclient", "presence-service")
+        .register(registry)
+
+    @Timed(
+        value = "webclient.request",  description = "Time taken to send webclient requests",
+        extraTags = ["request", "/activity", "method", "GET"]
+    )
     fun isUserActive(userId: UUID): Mono<ActivityStatus> {
         return presenceServiceWebClient.get()
             .uri("/activity")
@@ -23,9 +35,9 @@ class PresenceService(
             }
             .bodyToMono(UserActivityStatus::class.java)
             .map { it.status }
-            .onErrorResume { e ->
+            .doOnError { e ->
+                webClientErrors.increment()
                 println("Error while fetching user activity status for user $userId: ${e.message}")
-                Mono.error(RuntimeException("Failed to fetch user activity status for user $userId: ${e.message}"))
             }
     }
 }

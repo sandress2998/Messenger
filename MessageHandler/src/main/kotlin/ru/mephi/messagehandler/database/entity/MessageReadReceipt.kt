@@ -27,5 +27,7 @@ data class MessageUpdates (
     @Field("edited")
     val edited: MutableList<UUID> = ArrayList<UUID>(),
     @Field("deleted")
-    val deleted: MutableList<UUID> = ArrayList<UUID>()
+    val deleted: MutableList<UUID> = ArrayList<UUID>(),
+    @Field("viewed")
+    val viewed: MutableList<UUID> = ArrayList<UUID>()
 )

@@ -22,12 +22,13 @@ class TimerAspectConfig(
         private val httpRequestTimers = ConcurrentHashMap<String, Timer>()
     }
 
-    fun setHttpRequestTimer(uri: String) {
-        httpRequestTimers[uri] = getTimer(
+    fun setHttpRequestTimer(method: String, uri: String) {
+        httpRequestTimers["$method $uri"] = getTimer(
             "http.request.time",
             "Time taken to process HTTP requests",
             "layer", "controller",
-            "uri", uri
+            "uri", uri,
+            "method", method
         )
     }
 
@@ -42,7 +43,7 @@ class TimerAspectConfig(
         joinPoint: ProceedingJoinPoint,
         timeHttpRequest: TimeHttpRequest
     ): Any? {
-        val timer = httpRequestTimers[timeHttpRequest.uri] ?: return joinPoint.proceed()
+        val timer = httpRequestTimers["${timeHttpRequest.method} ${timeHttpRequest.uri}"] ?: return joinPoint.proceed()
 
         return measureTime(joinPoint, timer)
     }

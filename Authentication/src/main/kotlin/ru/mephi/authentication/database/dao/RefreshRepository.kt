@@ -19,17 +19,10 @@ class RefreshRepository(
     private val securityProperties: SecurityProperties,
     private val timerAspectConfig: TimerAspectConfig
 ) {
-    companion object {
-        const val CLASS_NAME = "RefreshRepository"
-    }
-
     val encoder = BCryptPasswordEncoder()
 
     // Добавить refresh-токен для пользователя
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.addToken"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun addToken(userId: String, hashedToken: String): Mono<Boolean> {
         val expiresAt = Instant.now().plus(Duration.ofDays(7))
         val score = expiresAt.epochSecond.toDouble() // Преобразуем expiresAt в score
@@ -42,10 +35,7 @@ class RefreshRepository(
     }
 
     // Получить все refresh-токены для пользователя
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.getTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
     fun getTokens(userId: String): Mono<List<RefreshToken>> {
         val range = Range.unbounded<Long>()
         return reactiveRedisTemplate.opsForZSet()
@@ -60,10 +50,7 @@ class RefreshRepository(
             }
     }
 
-    @Timed(
-        value = "business.operation.time",  description = "Time taken to execute business operations",
-        extraTags = ["operation", "$CLASS_NAME.getActiveTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "business.operation.time",  description = "Time taken to execute business operations",)
     fun getActiveTokens(userId: String): Mono<List<RefreshToken>> {
         val currentTime = Instant.now().epochSecond.toDouble()
         val range = Range.rightUnbounded(Range.Bound.exclusive(currentTime)) // Диапазон: (currentTime, +∞)
@@ -80,10 +67,7 @@ class RefreshRepository(
     }
 
     // Если пользователь явно выйдет из аккаунта
-    @Timed(
-        value = "db.query.time",  description = "Time taken to execute database queries",
-        extraTags = ["type", "nosql", "operation", "$CLASS_NAME.removeToken"]  // пары ключ-значение
-    )
+    @Timed(value = "db.query.time",  description = "Time taken to execute database queries",)
     fun removeToken(userId: String, token: String): Mono<Long> {
         val range = Range.unbounded<Long>()
         return reactiveRedisTemplate.opsForZSet()
@@ -100,10 +84,7 @@ class RefreshRepository(
     }
 
     // Удалить refresh-токен для пользователя
-    @Timed(
-        value = "db.query.time",  description = "Time taken to execute database queries",
-        extraTags = ["type", "nosql", "operation", "$CLASS_NAME.removeExpiredTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "db.query.time",  description = "Time taken to execute database queries",)
     fun removeExpiredTokens(userId: String): Mono<Long> {
         val currentTime = Instant.now().epochSecond.toDouble()
         val range = Range.leftUnbounded(Range.Bound.inclusive(currentTime)) // Диапазон: (-∞, currentTime]
@@ -112,20 +93,14 @@ class RefreshRepository(
     }
 
     // Удалить все токены для пользователя
-    @Timed(
-        value = "db.query.time",  description = "Time taken to execute database queries",
-        extraTags = ["type", "nosql", "operation", "$CLASS_NAME.removeAllTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "db.query.time",  description = "Time taken to execute database queries",)
     fun removeAllTokens(userId: String): Mono<Boolean> {
         return reactiveRedisTemplate.delete("refresh:$userId")
             .map { deletedCount -> deletedCount > 0 }
     }
 
     @Scheduled(fixedRate = 300000) // 300000 мс = 5 минут
-    @Timed(
-        value = "db.query.time",  description = "Time taken to execute database queries",
-        extraTags = ["type", "nosql", "operation", "$CLASS_NAME.cleanupExpiredTokens"]  // пары ключ-значение
-    )
+    @Timed(value = "db.query.time",  description = "Time taken to execute database queries",)
     fun cleanupExpiredTokens() {
         // Удаляем истекшие токены для всех ключей
         reactiveRedisTemplate.keys("*") // Получаем все ключи

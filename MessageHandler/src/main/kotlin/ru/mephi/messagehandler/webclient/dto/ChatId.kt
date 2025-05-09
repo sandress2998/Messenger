@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonToken
 import com.fasterxml.jackson.databind.DeserializationContext
 import com.fasterxml.jackson.databind.JsonDeserializer
 import com.fasterxml.jackson.databind.JsonNode
-import ru.mephi.messagehandler.models.dto.rest.response.SuccessResult
+import ru.mephi.messagehandler.model.dto.rest.response.SuccessResult
 import java.util.*
 
 class ChatId (

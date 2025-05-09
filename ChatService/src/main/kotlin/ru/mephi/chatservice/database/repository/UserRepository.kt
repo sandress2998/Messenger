@@ -1,5 +1,6 @@
 package ru.mephi.chatservice.database.repository
 
+import io.micrometer.core.annotation.Timed
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Mono
@@ -8,8 +9,8 @@ import java.util.*
 // хоть и есть user-service (микросервис), здесь только read операции по работе пользователями
 @Repository
 class UserRepository(private val databaseClient: DatabaseClient) {
-
     //@Query("SELECT username FROM users WHERE id = :userId;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getUsernameById(userId: UUID): Mono<String?> {
         return databaseClient.sql("SELECT username FROM users WHERE id = $1") // Используем $1 вместо :userId
             .bind(0, userId) // Индексация с 0
@@ -18,6 +19,7 @@ class UserRepository(private val databaseClient: DatabaseClient) {
     }
 
     //@Query("SELECT id FROM users WHERE email = :email;")
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getUserIdByEmail(email: String): Mono<UUID?> {
         return databaseClient.sql("SELECT id FROM users WHERE email = $1;") // Используем $1 вместо :email
             .bind(0, email) // Индексация с 0
@@ -25,6 +27,7 @@ class UserRepository(private val databaseClient: DatabaseClient) {
             .one()
     }
 
+    @Timed(value = "db.query.time", description = "Time taken to execute database queries")
     fun getUserIdAndUsernameByTag(tag: String): Mono<Pair<UUID?, String?>> {
         return databaseClient.sql("SELECT id, username FROM users WHERE tag = $1;") // Используем $1 вместо :email
             .bind(0, tag) // Индексация с 0
