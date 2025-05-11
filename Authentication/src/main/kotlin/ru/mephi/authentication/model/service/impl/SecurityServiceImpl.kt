@@ -132,16 +132,15 @@ class SecurityServiceImpl (
     }
 
     @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
-    override fun invalidateAllTokens(userId: String): Mono<InvalidateAllResponse> {
-
+    override fun invalidateAllTokens(userId: String): Mono<Void> {
         return refreshService.removeAllTokens(userId)
-            .map { isSucceed ->
-            if (isSucceed) {
-                InvalidateAllResponse("Tokens were deleted")
-            } else {
-                InvalidateAllResponse("No tokens were deleted")
+            .flatMap { isSucceed ->
+                if (isSucceed) {
+                    Mono.empty()
+                } else {
+                    Mono.error(RuntimeException("Tokens hasn't been deleted"))
+                }
             }
-        }
     }
 
     @Transactional

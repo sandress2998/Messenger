@@ -17,7 +17,7 @@ interface SecurityService {
 
     fun signout(userId: String, request: SignoutRequest): Mono<SignoutResponse>
 
-    fun invalidateAllTokens(userId: String): Mono<InvalidateAllResponse>
+    fun invalidateAllTokens(userId: String): Mono<Void>
 
     fun deleteUser(userId: UUID): Mono<Void>
 }

@@ -79,7 +79,7 @@ class ChatService(
 
     @Transactional
     @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
-    fun deleteChat(chatId: UUID, userInitiatorId: UUID): Mono<RequestResult> {
+    fun deleteChat(chatId: UUID, userInitiatorId: UUID): Mono<Void> {
         return isUserAdminInChat(chatId, userInitiatorId)
             .flatMap { isAdmin: Boolean ->
                 if (!isAdmin) {
@@ -93,7 +93,7 @@ class ChatService(
             .then(messageHandlerService.deleteChat(chatId))
             .then(chatNotificationService.notifyAboutChatAction(chatId, ChatAction.DELETED))
             .then(activityService.deleteChat(chatId))
-            .thenReturn(SuccessResult() as RequestResult)
+            .then()
             .`as`(transactionalOperator::transactional)
     }
 
@@ -259,8 +259,9 @@ class ChatService(
 
     @Transactional
     @Timed(value = "business.operation.time",  description = "Time taken to execute business operations")
-    fun deleteMemberFromChat(chatId: UUID, memberToDeleteId: UUID, userInitiatorId: UUID): Mono<RequestResult> {
+    fun deleteMemberFromChat(chatId: UUID, memberToDeleteId: UUID, userInitiatorId: UUID): Mono<Void> {
         return chatMembersRepository.getById(memberToDeleteId)
+            .switchIfEmpty(Mono.error(NotFoundException("Member not found")))
             .flatMap { member ->
                 if (chatId != member.chatId) {
                     Mono.error(NotFoundException("ChatId is wrong"))
@@ -273,9 +274,8 @@ class ChatService(
                 }
                 .then(chatNotificationService.notifyAboutChatMemberAction(chatId, memberToDeleteId, ChatMemberAction.DELETED))
                 .then(activityService.deleteFromChat(member.userId, chatId))
-                .thenReturn(SuccessResult() as RequestResult)
+                .then()
             }
-            .switchIfEmpty(Mono.error(NotFoundException("Member not found")))
             .`as`(transactionalOperator::transactional)
     }
 

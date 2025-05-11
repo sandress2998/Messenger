@@ -56,7 +56,7 @@ class ChatController(
     fun deleteChat (
         @RequestHeader("X-UserId") userId: UUID,
         @PathVariable("chatId") chatId: UUID
-    ): Mono<RequestResult> {
+    ): Mono<Void> {
         deleteChatCounter.increment()
         return chatService.deleteChat(chatId, userId)
     }
@@ -104,7 +104,7 @@ class ChatController(
         @RequestHeader("X-UserId") userInitiatorId: UUID,
         @PathVariable("chatId") chatId: UUID,
         @PathVariable("memberId") memberToDeleteId: UUID
-    ): Mono<RequestResult> {
+    ): Mono<Void> {
         removeMemberFromChatCounter.increment()
         return chatService.deleteMemberFromChat(chatId, memberToDeleteId, userInitiatorId)
     }

@@ -60,10 +60,9 @@ class AuthorizationControllerImpl(
 
     @DeleteMapping("/invalidate_all")
     @TimeHttpRequest("DELETE", "/auth/invalidate_all")
-    override fun invalidateAllTokens(@RequestHeader("X-UserId") userId: String): Mono<InvalidateAllResponse> {
+    override fun invalidateAllTokens(@RequestHeader("X-UserId") userId: String): Mono<Void> {
         invalidateAllTokensCounter.increment()
         return securityService.invalidateAllTokens(userId)
-            .doOnNext { response -> println("Response: $response") }
             .doOnError { error -> println("Error: ${error.message}") }
     }
 

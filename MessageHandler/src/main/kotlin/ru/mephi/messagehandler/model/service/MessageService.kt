@@ -102,7 +102,7 @@ class MessageService (
         userId: UUID,
         chatId: UUID,
         messageId: UUID
-    ): Mono<SuccessResult> {
+    ): Mono<Void> {
         return checkIfUserMember(userId, chatId)
             .flatMap { memberId ->
                 checkIfMemberSender(memberId, messageId)
@@ -110,7 +110,7 @@ class MessageService (
                 .then(messageReadReceiptService.addDeletedMessage(chatId, messageId)) // потом уведомляем об этом в message read receipt
                 .then(messageNotificationService.notifyChatMembersAboutMessageAction(memberId, chatId, memberId, MessageAction.DELETED))
             }
-            .thenReturn(SuccessResult())
+            .then()
     }
 
     @Timed(
@@ -157,10 +157,10 @@ class MessageService (
     @Timed(
         value = "business.operation.time",  description = "Time taken to execute business operations"
     )
-    fun deleteChat(chatId: UUID): Mono<SuccessResult> {
+    fun deleteChat(chatId: UUID): Mono<Void> {
         return messageRepository.deleteMessageByChatId(chatId) // удаляем все сообщения
             .then(messageReadReceiptService.deleteChat(chatId)) // удаляем все message read receipt
-            .thenReturn(SuccessResult())
+            .then()
     }
 
     @Timed(

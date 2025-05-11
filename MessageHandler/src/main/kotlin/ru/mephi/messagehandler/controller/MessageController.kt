@@ -54,7 +54,7 @@ class MessageController(
         @RequestHeader("X-UserId") userId: UUID,
         @PathVariable chatId: UUID,
         @PathVariable messageId: UUID
-    ): Mono<SuccessResult> {
+    ): Mono<Void> {
         deleteMessageCounter.increment()
         return messageService.deleteMessage(userId, chatId, messageId)
     }
@@ -104,7 +104,7 @@ class MessageController(
     @TimeHttpRequest("DELETE", "/chats/{chatId}")
     fun deleteChat(
         @PathVariable chatId: UUID
-    ): Mono<SuccessResult> {
+    ): Mono<Void> {
         deleteChatCounter.increment()
         return messageService.deleteChat(chatId)
     }
